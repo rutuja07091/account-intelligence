@@ -53,21 +53,6 @@ streamlit run app.py           # opens http://localhost:8501
 
 The assistant uses `claude-sonnet-5-5` by default. To try another model, set it before starting the app, for example `export ANTHROPIC_MODEL=claude-haiku-5-5` for faster and cheaper answers.
 
-## Assistant demo script (2 to 3 minutes, at the end of the pitch)
-
-Run every question live at least twice before the interview. Each live answer is saved to `cache/answers.json`, and the "Use saved answers" switch in the sidebar replays them if the network or the API fails. Also record a short screen capture as a last resort.
-
-| Step | Signed in as | Ask | What it proves |
-| --- | --- | --- | --- |
-| 1 | Regional VP | Which physicians at Riverbend have gone quiet since the Plaque dinner program? | It finds 4 of the 12 attendees who ordered before and none after. Open "How this was answered": the model picked a governed metric, it did not write SQL |
-| 2 | Maya Ellison, TAM Northern California | The same question | Row level security. Riverbend is in Ohio Valley, so Maya gets nothing and is told it is outside her territory. The filter is added in code, not in the prompt, so no wording gets around it |
-| 3 | Jordan Pike, TAM Ohio Valley | Which accounts in my territory have the lowest estimated utilization? | The answer carries the metric's caveat that the CCTA denominator is an estimate. Definitions travel with the numbers |
-| 4 | Regional VP | How has Plaque's share of cases trended by month this year? | A line chart from one governed measure. Plaque share rises from about 9% in January to about 17% by September |
-| 5 | Regional VP | Show me the patient names for Riverbend's cases last month. | It declines. There are no patient columns to leak; `test_no_patient_columns_anywhere` fails the build if one is ever added |
-| 6 | Regional VP | Which accounts need review, and which are just data gaps? | 8 accounts are flagged Review decline and 3 are labeled Data gap, including Summit Heart Institute, which looks like a 32% drop but is missing 14 days of feed. This is the answer to "how do you know a drop is real?" |
-
-In the interview, steps 1, 2, and 5 are enough. Close by noting that the tests and the GitHub Actions workflow fail any pull request that breaks a metric definition or the security rule, before a stakeholder sees a wrong number.
-
 ### Data coverage: missing is not zero
 
 Raw counts cannot tell a real decline from a feed that stopped arriving. The `accounts` model records feed gaps (days an account's cases never arrived) and labels each account:
@@ -98,7 +83,7 @@ The 30% threshold and the 60 case minimum are illustrative; they would be agreed
 | Streamlit app | An internal app, or a component inside Salesforce so reps never leave it |
 | Not built yet | Writing a recommended next action back to Salesforce as a Task for the TAM |
 
-## What each file does (be ready to read any of these aloud)
+## What each file does
 
 - **`generate_data.py`** builds six tables with a fixed random seed so the numbers never change between runs. Each physician gets an ordering weight; monthly cases are drawn from a Poisson distribution scaled by the account's CCTA volume, a ramp after activation, and summer seasonality. It plants the Riverbend story by stopping four attendees' cases on the dinner date and boosting the other eight.
 - **`semantic_model.yaml`** defines four models (`cases`, `physician_activity`, `event_followup`, `accounts`). Each has base SQL, named dimensions, and named measures with descriptions. The descriptions are what the assistant reads to choose a metric.
@@ -118,4 +103,3 @@ The 30% threshold and the 60 case minimum are illustrative; they would be agreed
 - Utilization uses an estimated denominator, and the metric says so.
 - No write back to Salesforce yet.
 - The data coverage check lives in the Python semantic model and the Tableau export. The Cube files in `cube/` cover the cases, accounts, and physicians cubes only and do not include it yet.
-- Tableau Public has no sign-in, so territory security in Tableau is shown as a filter; `tableau/BUILD_GUIDE.md` explains how it would be enforced on Tableau Cloud.
