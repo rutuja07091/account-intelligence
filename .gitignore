@@ -1,0 +1,12 @@
+data/
+__pycache__/
+.venv/
+.env
+tableau/data/
+.venv*/
+.pytest_cache/
+.DS_Store
+cache/*
+!cache/.gitkeep
+cube/node_modules/
+cube/.env

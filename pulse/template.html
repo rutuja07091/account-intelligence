@@ -1,0 +1,1093 @@
+<title>Pulse CRM</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: app shell matching the pitch deck. Frosted header with section switcher and role picker, 1200px workspace, slide-in account drawer. */
+:root {
+  --bg: #f5f6f8; --surface: #ffffff; --surface-2: #edf0f4; --line: #d9dee6;
+  --fg: #13213c; --fg-2: #3f4d63; --muted: #6b778a;
+  --accent: #2c6390; --accent-soft: #e2ecf5; --pulse: #b31330; --pulse-soft: #f8e1e5;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a;
+  --good: #0ca30c; --warn: #fab219; --serious: #ec835a; --crit: #d03b3b;
+  --good-ink: #086b08; --warn-ink: #805300; --serious-ink: #a3421b; --crit-ink: #a8202f;
+  --hero-bg: #13213c; --hero-bg-2: #1d3157; --hero-fg: #f2f5fa; --hero-fg-2: #b4c0d4; --hero-accent: #ff6f86; --hero-line: rgba(255,255,255,.13); --hero-card: rgba(255,255,255,.06);
+  --grid: #e4e8ee; --axis: #c3cad4; --shadow: 0 1px 2px rgba(19,33,60,.06), 0 10px 28px rgba(19,33,60,.08);
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0b1322; --surface: #111b2e; --surface-2: #17233a; --line: #25334c;
+  --fg: #e8edf5; --fg-2: #aab6c8; --muted: #7d8aa0;
+  --accent: #78aedc; --accent-soft: #16304a; --pulse: #f0647b; --pulse-soft: #3a1720;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+  --good-ink: #43c943; --warn-ink: #fab219; --serious-ink: #ef9b79; --crit-ink: #f07f8b;
+  --hero-bg: #101c33; --hero-bg-2: #1b2e52;
+  --grid: #1f2b40; --axis: #34425a; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.3);
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #0b1322; --surface: #111b2e; --surface-2: #17233a; --line: #25334c;
+  --fg: #e8edf5; --fg-2: #aab6c8; --muted: #7d8aa0;
+  --accent: #78aedc; --accent-soft: #16304a; --pulse: #f0647b; --pulse-soft: #3a1720;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+  --good-ink: #43c943; --warn-ink: #fab219; --serious-ink: #ef9b79; --crit-ink: #f07f8b;
+  --hero-bg: #101c33; --hero-bg-2: #1b2e52;
+  --grid: #1f2b40; --axis: #34425a; --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.3);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: radial-gradient(1000px 420px at 100% -80px, color-mix(in srgb, var(--accent) 8%, transparent), transparent 70%), var(--bg); background-attachment: fixed; color: var(--fg); font-family: var(--f-body); font-size: 14px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+button, select, input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1200px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.num, td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.up { color: var(--good-ink); font-weight: 600; } .down { color: var(--crit-ink); font-weight: 600; } .muted { color: var(--muted); }
+
+header.app { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: color-mix(in srgb, var(--surface) 86%, transparent); -webkit-backdrop-filter: saturate(1.5) blur(14px); backdrop-filter: saturate(1.5) blur(14px); border-bottom: 1px solid var(--line); }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; padding-block: 12px 10px; }
+.brand { display: flex; align-items: center; gap: 10px; margin-right: auto; background: none; border: 0; padding: 0; cursor: pointer; text-align: left; }
+.bname { display: block; font-weight: 700; font-size: 20px; letter-spacing: -.02em; line-height: 1; }
+.brand small { display: block; color: var(--muted); font-size: 12px; margin-top: 3px; }
+.areas { display: flex; gap: 2px; background: var(--surface-2); border-radius: 10px; padding: 3px; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+.areas button { border: 0; background: none; padding: 6px 12px; border-radius: 8px; font-weight: 600; color: var(--fg-2); cursor: pointer; white-space: nowrap; }
+.areas button:hover { color: var(--fg); }
+.areas button[aria-current="page"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(19,33,60,.14); }
+.role { display: flex; align-items: center; gap: 8px; }
+.role label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; white-space: nowrap; }
+.role select { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; max-width: 100%; }
+nav.tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+nav.tabs button { background: none; border: 0; padding: 9px 12px; border-bottom: 2px solid transparent; color: var(--fg-2); font-weight: 600; cursor: pointer; white-space: nowrap; }
+nav.tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--pulse); }
+
+main { padding-block: 22px 48px; display: grid; gap: 20px; }
+.page-head { display: grid; gap: 2px; }
+.eyebrow { margin: 0; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--pulse); font-weight: 700; }
+.h-page { font-size: clamp(22px, 3vw, 30px); font-weight: 700; letter-spacing: -.02em; margin: 0; line-height: 1.15; text-wrap: balance; }
+.lede { color: var(--fg-2); max-width: 70ch; margin: 6px 0 0; }
+.rls { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: 13px; color: var(--fg-2); background: var(--accent-soft); border-radius: 12px; padding: 10px 14px; }
+.rls b { color: var(--fg); }
+.rls code { font-family: var(--f-mono); font-size: 12px; background: var(--surface); padding: 2px 6px; border-radius: 5px; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; min-width: 0; box-shadow: 0 1px 2px rgba(19,33,60,.04); }
+.panel h2 { font-size: 16px; font-weight: 700; margin: 0; letter-spacing: -.01em; }
+.panel .sub, .sub { color: var(--muted); font-size: 12.5px; margin: 2px 0 0; }
+.panel-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; align-items: flex-end; margin-bottom: 14px; }
+.grid-2 { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px; }
+.grid-2.even { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px 14px; display: grid; gap: 4px; align-content: start; box-shadow: 0 1px 2px rgba(19,33,60,.04); min-width: 0; }
+.kpi .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+.kpi .val { font-size: 30px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+.kpi .delta { font-size: 12.5px; color: var(--fg-2); }
+.kpi-spark { display: block; margin-top: 6px; }
+
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 2px 8px 2px 6px; border-radius: 999px; white-space: nowrap; }
+.pill svg { flex: none; }
+.st-gap { color: var(--accent); background: var(--accent-soft); }
+.st-decline { color: var(--crit-ink); background: color-mix(in srgb, var(--crit) 14%, transparent); }
+.st-quiet { color: var(--serious-ink); background: color-mix(in srgb, var(--serious) 18%, transparent); }
+.st-ramp { color: var(--warn-ink); background: color-mix(in srgb, var(--warn) 22%, transparent); }
+.st-plaque { color: var(--fg-2); background: var(--surface-2); }
+.st-ok { color: var(--good-ink); background: color-mix(in srgb, var(--good) 14%, transparent); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--fg-2); }
+.legend i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { fill: var(--muted); font-size: 11px; font-family: var(--f-body); font-variant-numeric: tabular-nums; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); border-radius: 8px; padding: 8px 10px; font-size: 12px; min-width: 140px; z-index: 2; }
+.tip b { display: block; margin-bottom: 4px; }
+.tip div { display: flex; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; }
+.tip i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+
+.list { display: grid; gap: 8px; }
+.item { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; cursor: pointer; display: grid; gap: 3px; width: 100%; transition: border-color .15s, transform .15s; }
+.item:hover { border-color: var(--accent); transform: translateX(2px); }
+.item .top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.item .name { font-weight: 600; display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.item p { margin: 0; color: var(--fg-2); font-size: 13px; }
+
+.who { display: flex; align-items: center; gap: 10px; }
+.mono { width: 34px; height: 34px; border-radius: 10px; flex: none; display: grid; place-items: center; font-weight: 700; font-size: 12px; color: var(--accent); background: linear-gradient(140deg, var(--accent-soft), color-mix(in srgb, var(--accent-soft) 40%, var(--surface))); border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent); }
+.mono.sm { width: 24px; height: 24px; border-radius: 7px; font-size: 10px; }
+.mono.lg { width: 48px; height: 48px; border-radius: 14px; font-size: 17px; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; flex: none; display: grid; place-items: center; font-weight: 700; font-size: 11px; color: var(--fg-2); background: var(--surface-2); border: 1px solid var(--line); }
+
+.weights { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px 18px; }
+.weights label { display: grid; gap: 4px; font-size: 12.5px; color: var(--fg-2); }
+.weights .wl { display: flex; justify-content: space-between; gap: 6px; }
+.weights .wl b { color: var(--fg); font-variant-numeric: tabular-nums; }
+.weights input[type=range] { width: 100%; accent-color: var(--accent); }
+.weights small { color: var(--muted); font-size: 11.5px; line-height: 1.35; }
+.formula { margin-top: 12px; font-family: var(--f-mono); font-size: 12px; color: var(--fg-2); background: var(--surface-2); padding: 8px 10px; border-radius: 8px; overflow-x: auto; white-space: nowrap; }
+.tag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--pulse); background: var(--pulse-soft); padding: 2px 8px; border-radius: 999px; vertical-align: middle; margin-left: 6px; }
+
+.filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 12px; font-size: 12.5px; font-weight: 600; color: var(--fg-2); cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--surface); border-color: var(--fg); }
+.chip .n { font-variant-numeric: tabular-nums; opacity: .7; margin-left: 4px; }
+
+.tbl-wrap { overflow-x: auto; margin: 0 -20px; padding: 0 20px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th button { background: none; border: 0; padding: 0; font: inherit; color: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
+th button:hover { color: var(--fg); }
+td { padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+tbody tr.click { cursor: pointer; }
+tbody tr.click:hover td, tbody tr.sel td { background: var(--surface-2); }
+td .acct { font-weight: 600; white-space: nowrap; }
+.meta { color: var(--muted); font-size: 12px; }
+td .meta { white-space: nowrap; }
+.score { display: flex; align-items: center; gap: 8px; }
+.score .track { width: 60px; height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; flex: none; }
+.score .fill { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+.score b { font-variant-numeric: tabular-nums; width: 2ch; text-align: right; }
+.untrusted { color: var(--accent); font-weight: 600; font-size: 12px; white-space: nowrap; }
+
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 7px 12px; font-weight: 600; cursor: pointer; font-size: 13px; }
+.btn:hover:not(:disabled) { border-color: var(--accent); }
+.btn.primary { background: var(--fg); border-color: var(--fg); color: var(--surface); }
+.btn.sm { padding: 4px 9px; font-size: 12px; }
+.link { background: none; border: 0; padding: 0; color: var(--accent); font-weight: 600; cursor: pointer; font-size: inherit; text-align: left; }
+.link:hover { text-decoration: underline; }
+
+.drawer-bg { position: fixed; inset: 0; background: rgba(8,14,26,.5); z-index: 20; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(640px, 100%); background: var(--bg); z-index: 21; overflow-y: auto; box-shadow: var(--shadow);
+  padding: calc(18px + env(safe-area-inset-top, 0px)) max(18px, env(safe-area-inset-right, 0px)) calc(24px + env(safe-area-inset-bottom, 0px)) 18px; display: grid; gap: 16px; align-content: start; }
+.dh { display: flex; align-items: center; gap: 12px; }
+.dh h2 { font-size: 22px; margin: 0; letter-spacing: -.02em; line-height: 1.15; }
+.close { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; width: 34px; height: 34px; cursor: pointer; flex: none; font-size: 18px; line-height: 1; align-self: flex-start; }
+.nba { border-left: 3px solid var(--pulse); background: var(--surface); border-radius: 0 12px 12px 0; padding: 12px 14px; }
+.nba.gap { border-left-color: var(--accent); }
+.nba .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--pulse); font-weight: 700; }
+.nba.gap .lbl { color: var(--accent); }
+.nba p { margin: 4px 0 0; }
+.nba-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.facts { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 8px; }
+.fact { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; min-width: 0; }
+.fact .k { font-size: 11px; color: var(--muted); }
+.fact .v { font-weight: 700; font-size: 17px; font-variant-numeric: tabular-nums; }
+.h3 { font-size: 15px; font-weight: 700; margin: 0 0 8px; }
+.log { display: grid; }
+.log > div { display: grid; grid-template-columns: 76px minmax(0,1fr); gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.log > div > span:first-child { color: var(--muted); font-variant-numeric: tabular-nums; }
+.log .new { color: var(--accent); font-weight: 600; }
+
+.form { display: grid; gap: 12px; }
+.frow { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.form label.f { display: grid; gap: 4px; font-size: 12px; font-weight: 600; color: var(--fg-2); }
+.form select, .form textarea { background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 14px; width: 100%; font-weight: 400; }
+.form textarea { resize: vertical; }
+.inline { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--fg-2); }
+.factions { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
+.tasks { display: grid; }
+.task { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); align-items: start; }
+.task:last-child { border-bottom: 0; }
+.task input { margin-top: 3px; accent-color: var(--accent); width: 16px; height: 16px; }
+.task label { font-weight: 600; cursor: pointer; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--fg); color: var(--surface); padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: 13.5px; z-index: 30; box-shadow: var(--shadow); width: max-content; max-width: calc(100% - 32px); }
+
+.hero-band { position: relative; overflow: hidden; border-radius: 22px; color: var(--hero-fg); background: radial-gradient(700px 300px at 85% 0%, var(--hero-bg-2), transparent 70%), var(--hero-bg); padding: clamp(30px, 4.5vw, 50px) clamp(20px, 4vw, 44px) clamp(80px, 9vw, 108px); display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 28px; align-items: end; box-shadow: 0 20px 50px -24px rgba(19,33,60,.6); }
+.hero-band::before { content: ""; position: absolute; left: clamp(20px, 4vw, 44px); top: clamp(16px, 2.5vw, 26px); width: 64px; height: 4px; background: var(--hero-accent); border-radius: 2px; }
+.hero-band .eyebrow { color: var(--hero-fg-2); letter-spacing: .02em; text-transform: none; font-weight: 500; font-size: 13px; }
+.thesis { font-size: clamp(30px, 4.8vw, 50px); font-weight: 700; letter-spacing: -.03em; line-height: 1.04; margin: 8px 0 0; text-wrap: balance; max-width: 18ch; }
+.thesis span { color: var(--hero-accent); }
+.hero-band .lede { color: var(--hero-fg-2); font-size: 15.5px; margin-top: 14px; max-width: 60ch; }
+.hero-copy { display: grid; align-content: start; position: relative; z-index: 1; min-width: 0; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.btn.hero-primary { background: var(--hero-accent); border-color: var(--hero-accent); color: #2a0710; padding: 10px 16px; font-size: 14px; }
+.btn.hero-ghost { background: transparent; color: var(--hero-fg); border-color: var(--hero-line); padding: 10px 16px; font-size: 14px; }
+.btn.hero-ghost:hover { border-color: var(--hero-fg-2); }
+.hero-stats { display: grid; gap: 10px; position: relative; z-index: 1; min-width: 0; }
+.hero-stats div { background: var(--hero-card); border: 1px solid var(--hero-line); border-radius: 14px; padding: 12px 14px; display: grid; gap: 1px; }
+.hero-stats small { color: var(--hero-fg-2); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
+.hero-stats b { font-size: 28px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+.hero-stats span { color: var(--hero-fg-2); font-size: 12.5px; }
+.hero-stats .up { color: #7ee2a0; } .hero-stats .down { color: var(--hero-accent); }
+.ecg { position: absolute; left: 0; right: 0; bottom: 8px; width: 100%; height: clamp(60px, 8vw, 92px); pointer-events: none; }
+.ecg path { fill: none; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.ecg-base { stroke: var(--hero-line); stroke-width: 1.5; }
+.ecg-run { stroke: var(--hero-accent); stroke-width: 2.4; stroke-dasharray: 90 910; filter: drop-shadow(0 0 6px var(--hero-accent)); }
+@media (prefers-reduced-motion: no-preference) { .ecg-run { animation: ecg 5.5s linear infinite; } @keyframes ecg { from { stroke-dashoffset: 1000; } to { stroke-dashoffset: 0; } } }
+
+.doors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.door { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 20px; display: grid; gap: 10px; align-content: start; cursor: pointer; transition: border-color .15s, transform .15s, box-shadow .15s; box-shadow: 0 1px 2px rgba(19,33,60,.04); min-width: 0; }
+.door:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow); }
+.door-top { display: flex; align-items: center; gap: 10px; }
+.door-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; flex: none; }
+.door-who { font-size: 12px; color: var(--muted); font-weight: 600; }
+.door-title { font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+.door-desc { color: var(--fg-2); font-size: 13.5px; }
+.door-preview { display: grid; gap: 6px; background: var(--surface-2); border-radius: 12px; padding: 10px 12px; min-height: 88px; align-content: center; min-width: 0; }
+.pv-row { display: flex; align-items: center; gap: 8px; background: var(--surface); border-radius: 8px; padding: 6px 8px; font-size: 12.5px; min-width: 0; }
+.pv-name { flex: 1; min-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pv-cap { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .07em; }
+.pv-code { font-family: var(--f-mono); font-size: 11.5px; line-height: 1.7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.pv-code span { color: var(--accent); } .pv-code em { font-style: normal; color: var(--good-ink); }
+.door-stats { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; border-block: 1px solid var(--line); padding-block: 10px; }
+.door-stats span { display: grid; gap: 1px; }
+.door-stats b { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.door-stats small { font-size: 11.5px; color: var(--muted); line-height: 1.3; }
+.door-cta { color: var(--accent); font-weight: 700; font-size: 13.5px; }
+
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px; }
+.pcard { border: 2px solid var(--accent); border-radius: 16px; padding: 18px; background: var(--surface); display: grid; gap: 6px; text-align: left; cursor: pointer; }
+.pcard.decline { border-color: var(--pulse); }
+.pcard .pn { font-weight: 700; }
+.pcard .pv { font-size: 40px; font-weight: 700; letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.pcard .pbar { border-radius: 8px; padding: 7px 10px; font-weight: 700; font-size: 13.5px; background: var(--accent-soft); color: var(--accent); }
+.pcard.decline .pbar { background: var(--pulse-soft); color: var(--pulse); }
+.pcard .pa { font-weight: 700; color: var(--accent); font-size: 13.5px; }
+.pcard.decline .pa { color: var(--pulse); }
+.also { display: grid; gap: 10px; }
+.also > div { background: var(--surface-2); border-radius: 12px; padding: 12px 14px; display: grid; gap: 4px; align-content: start; }
+.also b { font-size: 14px; } .also p { margin: 0; color: var(--fg-2); font-size: 13px; }
+.also code, .also a { font-family: var(--f-mono); font-size: 12px; color: var(--accent); word-break: break-all; }
+.tour { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; counter-reset: t; }
+.tour li { counter-increment: t; }
+.tour button { width: 100%; text-align: left; display: grid; grid-template-columns: 28px minmax(0,1fr); column-gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; cursor: pointer; }
+.tour button:hover { border-color: var(--accent); }
+.tour button::before { content: counter(t); grid-row: span 2; width: 24px; height: 24px; border-radius: 50%; background: var(--pulse-soft); color: var(--pulse); font-weight: 700; font-size: 12px; display: grid; place-items: center; }
+.tour b { font-size: 13.5px; } .tour span { color: var(--fg-2); font-size: 12.5px; }
+
+.mix { display: flex; gap: 2px; height: 14px; border-radius: 4px; overflow: hidden; }
+.mix span { min-width: 4px; }
+.mix-rows { display: grid; margin-top: 12px; }
+.mix-rows div { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 14px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.mix-rows div:last-child { border-bottom: 0; }
+.hbars { display: grid; gap: 12px; }
+.hbar { display: grid; grid-template-columns: 170px minmax(0,1fr) 130px; gap: 12px; align-items: center; }
+.hl { font-weight: 600; display: grid; } .hl small { color: var(--muted); font-weight: 400; font-size: 12px; }
+.htrack { height: 22px; background: var(--surface-2); border-radius: 0 4px 4px 0; overflow: hidden; }
+.htrack span { display: block; height: 100%; background: var(--s1); border-radius: 0 4px 4px 0; }
+.hv { font-weight: 700; font-variant-numeric: tabular-nums; } .hv small { font-weight: 500; font-size: 12px; margin-left: 4px; }
+.att { display: grid; }
+.att > div { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(0,1fr) auto; gap: 12px; align-items: center; font-size: 13px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.ba { display: grid; gap: 2px; }
+.ba span.b, .ba span.a { display: block; height: 6px; border-radius: 0 3px 3px 0; min-width: 2px; }
+.ba .b { background: var(--axis); } .ba .a { background: var(--s1); }
+
+.kanban-wrap { overflow-x: auto; margin: 0 -20px; padding: 0 20px 4px; }
+.kanban { display: grid; grid-template-columns: repeat(3, minmax(250px, 1fr)); gap: 12px; }
+.col { background: var(--surface-2); border-radius: 12px; padding: 10px; display: grid; gap: 8px; align-content: start; }
+.col-h { display: flex; justify-content: space-between; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--fg-2); font-weight: 600; padding: 2px 4px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px; display: grid; gap: 4px; }
+.card .top { display: flex; justify-content: space-between; gap: 6px; align-items: flex-start; }
+.card b { font-size: 13px; }
+.card-act { display: flex; gap: 6px; margin-top: 6px; }
+
+.arch { display: grid; gap: 8px; }
+.arch-row { display: grid; gap: 8px; grid-template-columns: repeat(var(--n), minmax(0,1fr)); }
+.node { background: var(--surface-2); border-radius: 10px; padding: 10px 12px; display: grid; gap: 1px; text-align: center; border: 1px solid transparent; }
+.node b { font-size: 13.5px; } .node span { font-size: 12px; color: var(--fg-2); }
+.node.key { background: var(--accent-soft); border-color: var(--accent); }
+.node.me { border: 2px solid var(--pulse); background: var(--surface); }
+.node.next { border: 1px dashed var(--axis); background: var(--surface); }
+.arch-down { text-align: center; color: var(--muted); line-height: 1; }
+.arch-foot { background: var(--fg); color: var(--surface); border-radius: 10px; padding: 9px 12px; text-align: center; font-size: 13px; font-weight: 500; }
+.codetabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+pre.code { margin: 0; background: var(--hero-bg); color: #dfe6f2; border-radius: 12px; padding: 14px; overflow: auto; max-height: 460px; font-family: var(--f-mono); font-size: 12.5px; line-height: 1.55; }
+.checks { display: grid; gap: 8px; }
+.check { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 10px; align-items: start; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); }
+.check p { margin: 2px 0 0; color: var(--fg-2); font-size: 12.5px; }
+.phases { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; }
+.phase { border-top: 4px solid var(--accent); padding-top: 10px; }
+.phase:last-child { border-top-color: var(--pulse); }
+.phase small { color: var(--muted); } .phase b { display: block; font-size: 17px; margin: 2px 0 4px; }
+.phase ul { margin: 0; padding-left: 18px; color: var(--fg-2); font-size: 13px; display: grid; gap: 3px; }
+footer { color: var(--muted); font-size: 12px; padding-block: 0 32px; }
+
+@media (max-width: 900px) {
+  .grid-2, .grid-2.even, .doors, .pair, .phases { grid-template-columns: minmax(0,1fr); }
+  .kpis { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .weights { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .facts { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .hero-band { grid-template-columns: minmax(0,1fr); }
+  .hero-stats { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .arch-row { grid-template-columns: minmax(0,1fr); }
+}
+@media (max-width: 620px) {
+  .hero-stats { grid-template-columns: minmax(0,1fr); }
+  .hbar { grid-template-columns: 110px minmax(0,1fr); } .hv { grid-column: 2; }
+  .kpi .val { font-size: 25px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .drawer.enter { animation: slide .22s ease-out; }
+  @keyframes slide { from { transform: translateX(24px); opacity: .6; } to { transform: none; opacity: 1; } }
+}
+</style>
+
+<header class="app">
+  <div class="wrap">
+    <div class="bar">
+      <button class="brand" data-go="hub" aria-label="Pulse home">
+        <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect width="30" height="30" rx="8" fill="var(--pulse)"/><path d="M5 16h5l2.5-6 4 11 2.5-5H25" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span><span class="bname">Pulse</span><small>Account Intelligence · next actions for TAMs</small></span>
+      </button>
+      <nav class="areas" id="areas" aria-label="Sections"></nav>
+      <div class="role"><label for="role">Signed in as</label><select id="role"></select></div>
+    </div>
+    <nav class="tabs" role="tablist" id="tabs"></nav>
+  </div>
+</header>
+<main class="wrap" id="main"></main>
+<footer class="wrap" id="foot"></footer>
+<div id="drawer-root"></div>
+
+<script id="pulse-data" type="application/json">/*__PULSE_DATA__*/</script>
+<script>
+// ---------- Data (built by export_for_pulse.py from semantic_model.yaml) ----------
+const D = JSON.parse(document.getElementById('pulse-data').textContent);
+const DAY = 86400000;
+const AS_OF = new Date(D.meta.as_of + 'T00:00:00Z');
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTHS = D.meta.months.map(m => MON[+m.slice(5) - 1] + ' ’' + m.slice(2, 4));
+const TERR = D.meta.territories;
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const fmt = n => Math.round(n).toLocaleString('en-US');
+const pct = (n, d = 0) => (n * 100).toFixed(d) + '%';
+const sum = arr => arr.reduce((x, y) => x + (y || 0), 0);
+const fmtDate = iso => { const d = new Date(iso + 'T00:00:00Z'); return MON[d.getUTCMonth()] + ' ' + d.getUTCDate() + ', ' + d.getUTCFullYear(); };
+const daysBefore = iso => Math.round((AS_OF - new Date(iso + 'T00:00:00Z')) / DAY);
+const initials = name => name.replace(/^Dr\.\s*/, '').replace(/,.*$/, '').split(/\s+/).filter(w => /^[A-Z]/.test(w)).slice(0, 2).map(w => w[0]).join('');
+
+// Same rule as the Tableau "Gone Quiet" field: 60+ days since last case and 5+ lifetime cases.
+const QUIET_DAYS = 60, QUIET_LIFE = 5;
+// Pulse proposals, to be agreed with TAMs before they go into the semantic model.
+const QUIET_MIN = 10;      // cases at risk from quiet physicians before an account is flagged
+const RAMP_UTIL = 0.17;    // under-ramped: activated in the last 12 months, 3+ months live, utilization below this
+const PLAQUE_UTIL = 0.27;  // Plaque opportunity: not activated for Plaque, utilization at or above the median
+
+const PAY = (D.payments || []).map(p => ({ name:p[0], acct:p[1], date:p[2], type:p[3], amount:p[4], event:p[5] }));
+const REVIEW_LIMIT = 2000; // illustrative internal review threshold per physician over 12 months
+const PHYS = D.physicians.map(r => ({ id:r[0], name:r[1], spec:r[2], acct:r[3], last:r[4], l90:r[5], p90:r[6], life:r[7], days:r[8], status:r[9] }));
+const isQuiet = p => p.days !== null && p.days >= QUIET_DAYS && p.life >= QUIET_LIFE;
+const physBy = {};
+PHYS.forEach(p => (physBy[p.acct] = physBy[p.acct] || []).push(p));
+const ACCOUNTS = D.accounts.map(a => {
+  const events = D.events.filter(e => e.account === a.id);
+  const activities = (D.activity[a.id] || []).map(x => ({ ...x }));
+  events.forEach(e => activities.push({ d: daysBefore(e.date), type: e.type, note: `${e.name}: ${e.attendees.length} attendees.` }));
+  activities.sort((x, y) => x.d - y.d);
+  const act = new Date(a.act + 'T00:00:00Z');
+  const live = (AS_OF.getUTCFullYear() - act.getUTCFullYear()) * 12 + AS_OF.getUTCMonth() - act.getUTCMonth();
+  return { ...a, phys: physBy[a.id] || [], events, activities, tasks: [], live };
+});
+const byId = Object.fromEntries(ACCOUNTS.map(a => [a.id, a]));
+const lastTouch = a => a.activities.length ? a.activities[0].d : 999;
+
+// ---------- Signals and next actions ----------
+const CAT = {
+  gap:     { label:'Data gap', cls:'st-gap', color:'var(--accent)', rule:'Any missing feed day in the last 180 days. The change is not trusted; it goes to the data owner.', icon:'<path d="M2.5 6h7M2.5 3.5h7M2.5 8.5h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>' },
+  decline: { label:'Review decline', cls:'st-decline', color:'var(--crit)', rule:'Complete data, 60+ cases in the earlier 90 days, and a drop of 30% or more.', icon:'<path d="M6 2v5M6 9.5v.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>' },
+  quiet:   { label:'Physicians quiet', cls:'st-quiet', color:'var(--serious)', rule:`Physicians quiet ${QUIET_DAYS}+ days who sent ${QUIET_MIN}+ cases in the prior 90 days.`, icon:'<circle cx="6" cy="4.2" r="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 10c.6-2 2-3 3.5-3s2.9 1 3.5 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>' },
+  ramp:    { label:'Under-ramped', cls:'st-ramp', color:'var(--warn)', rule:`Live under 12 months, 3+ months in, utilization below ${pct(RAMP_UTIL)}.`, icon:'<path d="M2.5 9.5l2.5-3 2 1.5 2.5-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>' },
+  plaque:  { label:'Plaque opportunity', cls:'st-plaque', color:'var(--axis)', rule:`Not activated for Plaque, utilization ${pct(PLAQUE_UTIL)} or higher.`, icon:'<path d="M6 3v6M3 6h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>' },
+  ok:      { label:'No action', cls:'st-ok', color:'var(--good)', rule:'None of the above.', icon:'<path d="M3 6.2l2 2 4-4.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>' }
+};
+const CAT_ORDER = ['gap','decline','quiet','ramp','plaque','ok'];
+const pill = (c, label) => `<span class="pill ${CAT[c].cls}"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">${CAT[c].icon}</svg>${label || CAT[c].label}</span>`;
+
+const COMPONENTS = [
+  { key:'util', label:'Utilization', help:'Cases ÷ estimated CCTAs, last 90 days', w:30 },
+  { key:'trend', label:'Verified trend', help:'Last 90 vs prior 90 days. Skipped for data gaps', w:25 },
+  { key:'breadth', label:'Physician breadth', help:'Share of physicians ordering in the last 90 days', w:15 },
+  { key:'quiet', label:'Quiet physicians', help:`Fewer physicians quiet ${QUIET_DAYS}+ days scores higher`, w:15 },
+  { key:'engage', label:'TAM engagement', help:'Days since the last logged touch', w:15 }
+];
+const state = { role:'vp', area:'hub', sub:{ crm:'today', dash:'overview' }, filter:'all', sort:{ key:'score', dir:1 }, codeTab:'cube', open:null, event:0,
+  weights: Object.fromEntries(COMPONENTS.map(c => [c.key, c.w])) };
+
+function metrics(a) {
+  const util = a.l90 / (a.ccta90 || 1);
+  const change = a.p90 ? (a.l90 - a.p90) / a.p90 : null;
+  const quiet = a.phys.filter(isQuiet).sort((x, y) => y.p90 - x.p90);
+  const atRisk = sum(quiet.map(p => p.p90));
+  let cat = 'ok';
+  if (a.signal === 'Data gap') cat = 'gap';
+  else if (a.signal === 'Review decline') cat = 'decline';
+  else if (atRisk >= QUIET_MIN) cat = 'quiet';
+  else if (a.recent && a.live >= 3 && util < RAMP_UTIL) cat = 'ramp';
+  else if (!a.plaqueAct && util >= PLAQUE_UTIL) cat = 'plaque';
+  const s = {
+    util: clamp(util / .5) * 100,
+    trend: a.signal === 'Data gap' || change === null ? null : clamp((change + .4) / .8) * 100,
+    breadth: a.phys.length ? a.actPhys / a.phys.length * 100 : 0,
+    quiet: (1 - quiet.length / Math.max(1, a.actPhys + quiet.length)) * 100,
+    engage: clamp(1 - lastTouch(a) / 90) * 100
+  };
+  let num = 0, den = 0;
+  COMPONENTS.forEach(c => { if (s[c.key] !== null) { num += s[c.key] * state.weights[c.key]; den += state.weights[c.key]; } });
+  return { util, change, quiet, atRisk, cat, s, score: den ? num / den : 0 };
+}
+const priority = (a, m) => CAT_ORDER.indexOf(m.cat) * 1e6 - (m.cat === 'quiet' ? m.atRisk : m.cat === 'decline' ? a.p90 - a.l90 : m.cat === 'gap' ? a.gapDays : a.ccta90);
+
+function nextAction(a, m) {
+  const q = m.quiet.slice(0, 3).map(p => `${p.name} (${p.p90} cases)`).join(', ');
+  switch (m.cat) {
+    case 'gap': return `Cases look ${pct(-m.change, 1)} lower (${fmt(a.p90)} to ${fmt(a.l90)}), but ${a.gapDays} feed days are missing. Don’t treat this as a decline. Send it to the data owner to restore the feed, then re-check.`;
+    case 'decline': return `Cases fell ${pct(-m.change, 1)} (${fmt(a.p90)} to ${fmt(a.l90)}) and the data is complete, so the drop is real. Review it with the account this week${m.quiet.length ? `, starting with the physicians who went quiet: ${q}` : ''}.`;
+    case 'quiet': return `${m.quiet.length} physician${m.quiet.length === 1 ? ' has' : 's have'} not ordered in ${QUIET_DAYS}+ days, putting ${fmt(m.atRisk)} cases a quarter at risk. Visit the top of the list: ${q}.`;
+    case 'ramp': return `Live ${a.live} months and sending ${pct(m.util, 1)} of estimated CCTAs. Check the TSM to TAM handoff and the physicians who have not started ordering (${a.phys.length - a.actPhys} of ${a.phys.length}).`;
+    case 'plaque': return `Strong FFRCT user at ${pct(m.util, 1)} utilization and not activated for Plaque. Propose a Plaque activation with the lead physician.`;
+    default: return `No signal needs action. Keep the regular cadence; last touch ${lastTouch(a)} days ago.`;
+  }
+}
+const ACT_FOR = { gap:'Email', decline:'Call', quiet:'Site visit', ramp:'Call', plaque:'Site visit', ok:'QBR' };
+const taskFor = (a, m) => ({
+  gap: [`Restore the case feed: ${a.gapDays} missing days`, 'Data owner'],
+  decline: [`Review the ${pct(-m.change)} decline with the account`, a.tam],
+  quiet: [m.quiet.length > 1 ? `Visit ${m.quiet[0].name} and ${m.quiet.length - 1} other quiet physicians` : `Visit ${m.quiet[0] ? m.quiet[0].name : 'the quiet physician'}`, a.tam],
+  ramp: ['Review the activation handoff and ramp plan', a.tam],
+  plaque: ['Propose Plaque activation', a.tam],
+  ok: ['Schedule the quarterly business review', a.tam]
+})[m.cat];
+
+// Seeded open tasks for the demo
+let taskSeq = 1;
+function addTask(a, title, owner, due) { a.tasks.unshift({ id: 'T' + (taskSeq++), title, owner, due, done: false }); }
+ACCOUNTS.forEach(a => {
+  const m = metrics(a);
+  if (m.cat === 'gap') addTask(a, `Restore the case feed: ${a.gapDays} missing days`, 'Data owner', [-3, 1, 4][taskSeq % 3]);
+  if (m.cat === 'decline') addTask(a, `Review the ${pct(-m.change)} decline with the account`, a.tam, [-1, 2, 5, 8][taskSeq % 4]);
+});
+const rb = ACCOUNTS.find(a => a.name === 'Riverbend Heart Institute');
+if (rb) addTask(rb, 'Visit the 4 physicians who went quiet after the Plaque dinner program', rb.tam, 0);
+
+// ---------- Access control ----------
+const ROLES = [{ id:'vp', label:'Regional VP (all territories)', terr:null, compliance:true }, ...TERR.map(t => ({ id:t.name, label:`${t.tam}, TAM (${t.name})`, terr:t.name, compliance:false })), { id:'compliance', label:'Compliance analyst (all territories)', terr:null, compliance:true }];
+const role = () => ROLES.find(r => r.id === state.role);
+const visible = () => ACCOUNTS.filter(a => !role().terr || a.terr === role().terr);
+function rlsBanner() {
+  const r = role(), n = visible().length;
+  if (r.terr) return `<div class="rls"><span><b>Territory security on.</b> ${n} of ${ACCOUNTS.length} accounts visible.</span><code>territory = '${esc(r.terr)}'</code><span>Applied once in the semantic layer, so Tableau and the assistant see the same rows.</span></div>`;
+  return `<div class="rls"><span><b>All territories.</b> ${n} accounts across ${TERR.length} territories.</span><span>Sign in as a TAM to see territory security narrow every view.</span></div>`;
+}
+
+// ---------- Charts ----------
+function niceStep(v) { const p = Math.pow(10, Math.floor(Math.log10(v))); const n = v / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p; }
+function lineChart(el, labels, series, height = 240) {
+  const W = Math.max(280, el.clientWidth || 600), H = height, m = { t:12, r:14, b:26, l:46 };
+  const raw = Math.max(1, ...series.flatMap(s => s.values.filter(v => v !== null)));
+  const step = niceStep(raw / 4), max = Math.ceil(raw / step) * step;
+  const x = i => m.l + (W - m.l - m.r) * (labels.length === 1 ? .5 : i / (labels.length - 1));
+  const y = v => m.t + (H - m.t - m.b) * (1 - v / max);
+  let g = '';
+  for (let v = 0; v <= max + 1e-9; v += step) {
+    g += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}" stroke="${v === 0 ? 'var(--axis)' : 'var(--grid)'}"/>`;
+    g += `<text x="${m.l - 8}" y="${y(v) + 4}" text-anchor="end">${fmt(v)}</text>`;
+  }
+  const every = Math.ceil(labels.length / Math.max(2, Math.floor((W - 60) / 64)));
+  labels.forEach((l, i) => { if (i % every === 0 || i === labels.length - 1) g += `<text x="${x(i)}" y="${H - 6}" text-anchor="middle">${l}</text>`; });
+  series.forEach(s => {
+    const d = s.values.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' ');
+    if (s.area) g += `<path d="${d} L${x(labels.length - 1)} ${y(0)} L${x(0)} ${y(0)} Z" fill="${s.color}" fill-opacity=".08"/>`;
+    g += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    const li = labels.length - 1;
+    g += `<circle cx="${x(li)}" cy="${y(s.values[li])}" r="4" fill="${s.color}" stroke="var(--surface)" stroke-width="2"/>`;
+  });
+  g += `<line class="hl" y1="${m.t}" y2="${H - m.b}" stroke="var(--axis)" visibility="hidden"/>`;
+  g += `<g class="dots" visibility="hidden">${series.map(s => `<circle r="4" fill="${s.color}" stroke="var(--surface)" stroke-width="2"/>`).join('')}</g>`;
+  g += `<rect class="hit" x="${m.l}" y="0" width="${W - m.l - m.r}" height="${H}" fill="transparent"/>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(series.map(s => s.name).join(', '))} by month">${g}</svg><div class="tip" hidden></div>`;
+  const svg = el.querySelector('svg'), tip = el.querySelector('.tip'), hl = svg.querySelector('.hl'), dots = svg.querySelector('.dots');
+  const hit = svg.querySelector('.hit');
+  hit.addEventListener('pointermove', ev => {
+    const r = svg.getBoundingClientRect(), px = (ev.clientX - r.left) * (W / r.width);
+    const i = Math.round(clamp((px - m.l) / (W - m.l - m.r)) * (labels.length - 1));
+    hl.setAttribute('x1', x(i)); hl.setAttribute('x2', x(i)); hl.setAttribute('visibility', 'visible'); dots.setAttribute('visibility', 'visible');
+    [...dots.children].forEach((c, k) => { c.setAttribute('cx', x(i)); c.setAttribute('cy', y(series[k].values[i])); });
+    tip.innerHTML = `<b>${labels[i]}</b>` + series.map(s => `<div><span><i style="background:${s.color}"></i>${s.name}</span><span>${fmt(s.values[i])}</span></div>`).join('');
+    tip.hidden = false;
+    const tx = x(i) * (r.width / W), tw = tip.offsetWidth;
+    tip.style.left = (tx + 12 + tw > r.width ? tx - tw - 12 : tx + 12) + 'px'; tip.style.top = '8px';
+  });
+  hit.addEventListener('pointerleave', () => { tip.hidden = true; hl.setAttribute('visibility', 'hidden'); dots.setAttribute('visibility', 'hidden'); });
+}
+function spark(values, color, W = 88, H = 24) {
+  const v = values.filter(x => x !== null); if (v.length < 2) return '';
+  const max = Math.max(1, ...v), x = i => 2 + (W - 6) * i / (v.length - 1), y = n => H - 3 - (H - 6) * n / max;
+  const d = v.map((n, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(n).toFixed(1)).join(' ');
+  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true"><path d="${d}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linejoin="round"/><circle cx="${x(v.length - 1)}" cy="${y(v[v.length - 1])}" r="2.6" fill="${color}"/></svg>`;
+}
+function areaSpark(values, color, W = 260, H = 56) {
+  const max = Math.max(...values), min = Math.min(...values), span = (max - min) || 1;
+  const x = i => 3 + (W - 6) * i / (values.length - 1), y = v => 6 + (H - 12) * (1 - (v - min) / span);
+  const d = values.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1)).join(' ');
+  const li = values.length - 1;
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" aria-hidden="true" style="display:block"><path d="${d} L${x(li)} ${H} L${x(0)} ${H} Z" fill="${color}" fill-opacity=".12"/><path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${x(li)}" cy="${y(values[li])}" r="3.5" fill="${color}" stroke="var(--surface)" stroke-width="2"/></svg>`;
+}
+function ecgPath(W = 1200, H = 120) {
+  const b = H * .62; let d = `M0 ${b}`;
+  for (let x0 = 0; x0 < W; x0 += 240) d += ` L${x0 + 60} ${b} Q${x0 + 72} ${b - 10} ${x0 + 84} ${b} L${x0 + 100} ${b} L${x0 + 108} ${b + 8} L${x0 + 118} ${H * .08} L${x0 + 130} ${H * .95} L${x0 + 139} ${b} L${x0 + 160} ${b} Q${x0 + 180} ${b - 18} ${x0 + 200} ${b} L${x0 + 240} ${b}`;
+  return d;
+}
+const legend = series => `<div class="legend">${series.map(s => `<span><i style="background:${s.color}"></i>${s.name}</span>`).join('')}</div>`;
+const delta = (v, isPts) => { if (v === null || isNaN(v)) return '<span class="muted">n/a</span>'; const cls = v >= 0 ? 'up' : 'down', sign = v >= 0 ? '+' : '−'; return `<span class="${cls}">${sign}${isPts ? (Math.abs(v) * 100).toFixed(1) + ' pts' : pct(Math.abs(v), 1)}</span>`; };
+
+// ---------- Aggregates (recomputed here and checked against the semantic layer) ----------
+function totals(acc) {
+  const l90 = sum(acc.map(a => a.l90)), p90 = sum(acc.map(a => a.p90)), ccta = sum(acc.map(a => a.ccta90));
+  const ok = acc.filter(a => a.signal !== 'Data gap');
+  const vl = sum(ok.map(a => a.l90)), vp = sum(ok.map(a => a.p90));
+  const M = D.meta.months.map((_, i) => sum(acc.map(a => a.m[i]))), PM = D.meta.months.map((_, i) => sum(acc.map(a => a.pm[i])));
+  const n = M.length;
+  return { n: acc.length, l90, p90, ccta, change: p90 ? (l90 - p90) / p90 : null, verified: vp ? (vl - vp) / vp : null, util: ccta ? l90 / ccta : 0,
+    gaps: acc.filter(a => a.signal === 'Data gap').length, declines: acc.filter(a => a.signal === 'Review decline').length,
+    M, PM, F: M.map((v, i) => v - PM[i]), plaqueShare3: sum(PM.slice(n - 3)) / (sum(M.slice(n - 3)) || 1), plaqueSharePrev: sum(PM.slice(n - 6, n - 3)) / (sum(M.slice(n - 6, n - 3)) || 1) };
+}
+const openTasks = acc => acc.flatMap(a => a.tasks.filter(t => !t.done).map(t => ({ a, t }))).sort((x, y) => x.t.due - y.t.due);
+const quietList = acc => acc.flatMap(a => a.phys.filter(isQuiet).map(p => ({ a, p }))).sort((x, y) => y.p.p90 - x.p.p90);
+const pageHead = (eyebrow, title, lede) => `<section class="page-head"><p class="eyebrow">${eyebrow}</p><h2 class="h-page">${title}</h2>${lede ? `<p class="lede">${lede}</p>` : ''}</section>`;
+
+// ---------- Tasks and toasts ----------
+const dueText = d => d < 0 ? `<span class="down">Overdue ${-d}d</span>` : d === 0 ? '<span class="down">Due today</span>' : `Due in ${d}d`;
+function taskList(items, showAcct) {
+  if (!items.length) return '<p class="sub">No open tasks.</p>';
+  return `<div class="tasks">${items.map(({ a, t }) => `
+    <div class="task"><input type="checkbox" id="task-${t.id}" data-task="${a.id}|${t.id}">
+      <div><label for="task-${t.id}">${esc(t.title)}</label>
+      <div class="meta">${dueText(t.due)} · ${esc(t.owner)}${showAcct ? ` · <button class="link" data-open="${a.id}">${esc(a.name)}</button>` : ''}</div></div></div>`).join('')}</div>`;
+}
+let toastTimer;
+function toast(msg) {
+  let el = document.getElementById('toast');
+  if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'toast'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+  el.textContent = msg; el.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 3800);
+}
+const main = document.getElementById('main');
+function refreshView() { const y = window.scrollY; render(); window.scrollTo(0, y); }
+document.addEventListener('change', e => {
+  if (!e.target.matches('[data-task]')) return;
+  const [aid, tid] = e.target.dataset.task.split('|'), t = byId[aid].tasks.find(x => x.id === tid);
+  t.done = true; toast(`Completed: ${t.title}`);
+  setTimeout(() => { refreshView(); if (state.open) renderDrawer(true); }, 300);
+});
+
+// ---------- Home hub ----------
+function renderHub() {
+  const acc = visible(), T = totals(acc), ms = acc.map(a => [a, metrics(a)]);
+  const action = ms.filter(([, m]) => m.cat !== 'ok' && m.cat !== 'plaque');
+  const quiet = quietList(acc), atRisk = sum(quiet.map(x => x.p.p90));
+  const tasks = openTasks(acc), overdue = tasks.filter(x => x.t.due < 0).length;
+  const checks = qualityChecks(), flagged = checks.filter(c => c.state !== 'pass').length;
+  const ico = d => `<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+  const door = (area, icon, title, who, desc, preview, stats, cta) => `
+    <button class="door" data-go="${area}">
+      <span class="door-top"><span class="door-icon" aria-hidden="true">${icon}</span><span class="door-who">${who}</span></span>
+      <span class="door-title">${title}</span><span class="door-desc">${desc}</span>
+      <span class="door-preview">${preview}</span>
+      <span class="door-stats">${stats.map(([v, l]) => `<span><b>${v}</b><small>${l}</small></span>`).join('')}</span>
+      <span class="door-cta">${cta} <span aria-hidden="true">→</span></span>
+    </button>`;
+  const crmPv = action.sort((x, y) => priority(...x) - priority(...y)).slice(0, 2)
+    .map(([a, m]) => `<span class="pv-row"><span class="mono sm">${initials(a.name)}</span><span class="pv-name">${esc(a.name)}</span>${pill(m.cat)}</span>`).join('') || '<span class="sub">Nothing needs action.</span>';
+  const summit = ACCOUNTS.find(a => a.name === 'Summit Heart Institute'), fair = ACCOUNTS.find(a => a.name === 'Fairhaven Medical Center');
+  const pcard = (a, kind) => { const m = metrics(a); return `
+    <button class="pcard ${kind}" data-open="${a.id}">
+      <span class="pn">${esc(a.name)} <span class="meta">· ${esc(a.terr)}</span></span>
+      <span class="pv">${m.change >= 0 ? '+' : '−'}${pct(Math.abs(m.change), 1)}</span>
+      <span class="meta">cases, last 90 days vs the 90 before (${fmt(a.p90)} to ${fmt(a.l90)})</span>
+      <span class="pbar">${kind === 'gap' ? `Data gap: ${a.gapDays} feed days missing` : 'Review decline: data complete'}</span>
+      <span class="pa">${kind === 'gap' ? 'Send to the data owner.' : 'Send to the account manager.'}</span>
+    </button>`; };
+  const link = (href, label) => href ? `<a href="${esc(href)}" target="_blank" rel="noopener">${esc(href)}</a>` : `<span class="muted">${label}</span>`;
+  const steps = [
+    ['Sign in as Jordan Pike', 'TAM, Ohio Valley. Territory security narrows 180 accounts to 25.', 'crm|today', 'Ohio Valley', '', ''],
+    ['Open Riverbend Heart Institute', 'Four physicians went quiet after the Plaque dinner program.', 'crm|today', 'Ohio Valley', rb ? rb.id : '', ''],
+    ['Create the Task and log the visit', 'The next step is written back to Salesforce as a Task.', 'crm|accounts', 'Ohio Valley', rb ? rb.id : '', ''],
+    ['Tell a data gap from a decline', 'Summit and Fairhaven both fell 32%. Only one drop is real.', 'crm|accounts', 'vp', '', 'gap'],
+    ['Compare territories', 'The leadership view, from the same definitions.', 'dash|territories', 'vp', '', ''],
+    ['Check the build', 'Pulse checks its own totals against the semantic layer.', 'built', 'vp', '', '']
+  ];
+  main.innerHTML = `
+    <section class="hero-band">
+      <div class="hero-copy">
+        <p class="eyebrow">Pitch: a new CRM · synthetic data, snapshot ${fmtDate(D.meta.as_of)}</p>
+        <h2 class="thesis">A CRM that tells reps <span>what to do next.</span></h2>
+        <p class="lede">Salesforce records what happened. It does not tell a TAM what to do on Monday. Pulse keeps Salesforce as the system of record and adds the layer beside it: governed metrics on the warehouse, shown where TAMs work, with next steps written back as Salesforce Tasks.</p>
+        <div class="hero-actions"><button class="btn hero-primary" data-go="crm|today" data-role="Ohio Valley">Start the tour as Jordan Pike <span aria-hidden="true">→</span></button><button class="btn hero-ghost" data-go="dash" data-role="vp">See the dashboard</button></div>
+      </div>
+      <div class="hero-stats">
+        <div><small>Cases, last 90 days</small><b>${fmt(T.l90)}</b><span>${delta(T.change)} raw · ${delta(T.verified)} verified</span></div>
+        <div><small>Physicians gone quiet</small><b>${fmt(quiet.length)}</b><span>${fmt(atRisk)} cases a quarter at risk</span></div>
+        <div><small>Accounts needing action</small><b>${action.length}</b><span>${T.gaps} ${T.gaps === 1 ? 'is a data gap' : 'are data gaps'}, sent to the data owner</span></div>
+      </div>
+      <svg class="ecg" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true"><path class="ecg-base" d="${ecgPath()}"/><path class="ecg-run" d="${ecgPath()}" pathLength="1000"/></svg>
+    </section>
+    ${rlsBanner()}
+    <section class="doors">
+      ${door('crm', ico('<rect x="3" y="4" width="14" height="13" rx="2"/><path d="M3 8h14M7 2v4M13 2v4M7 12h3"/>'), 'CRM workspace', 'For TAMs',
+        'Where the work happens: a ranked list of accounts and physicians to see, account records, activity logging, and Tasks written back to Salesforce.', crmPv,
+        [[tasks.length, 'open tasks'], [overdue, 'overdue'], [quiet.length, 'physicians to see']], 'Open the CRM')}
+      ${door('dash', ico('<path d="M3 17V9M8 17V4M13 17v-6M18 17H2"/>'), 'Analytics dashboard', 'For regional leaders, finance, and compliance',
+        'How the business is doing: volume, verified change, utilization, Plaque mix, territories, program follow-up, and transfers of value.',
+        `<span class="pv-cap">Cases per month, ${MONTHS[0]} to ${MONTHS[MONTHS.length - 1]}</span>${areaSpark(T.M, 'var(--s1)')}`,
+        [[pct(T.util, 1), 'est. utilization'], [delta(T.verified), 'verified change'], [pct(T.plaqueShare3, 1), 'Plaque share']], 'Open the dashboard')}
+      ${door('built', ico('<path d="M7 6l-4 4 4 4M13 6l4 4-4 4M11 4l-2 12"/>'), 'How it’s built', 'For the data team',
+        'The stack, the Cube model and tests behind every number, and live checks that Pulse matches the semantic layer.',
+        `<code class="pv-code"><span>semantic_model.yaml</span> → export_for_pulse.py<br><span>cube/model/</span>cases.yml<br><span>live checks:</span> <em>${checks.length - flagged} passed, ${flagged} flagged</em></code>`,
+        [[checks.length, 'live checks'], [flagged, 'flagged'], ['CI', 'on every PR']], 'See the build')}
+    </section>
+    ${summit && fair ? `<section class="panel">
+      <div class="panel-head"><div><h2>A missing feed looks exactly like a decline</h2><p class="sub">Same raw drop, opposite action. Select either card to open the account.</p></div></div>
+      <div class="pair">${pcard(summit, 'gap')}${pcard(fair, 'decline')}</div>
+    </section>` : ''}
+    <section class="grid-2">
+      <div class="panel">
+        <div class="panel-head"><div><h2>Five-minute tour</h2><p class="sub">Each step opens the right screen as the right person</p></div></div>
+        <ol class="tour">${steps.map(([t, d, go, r, open, f]) => `<li><button data-go="${go}" data-role="${r}" ${open ? `data-then-open="${open}"` : ''} ${f ? `data-filter="${f}"` : ''}><b>${t}</b><span>${d}</span></button></li>`).join('')}</ol>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h2>Also in this project</h2><p class="sub">Same definitions, different surfaces</p></div></div>
+        <div class="also">
+          <div><b>Tableau dashboard</b><p>Utilization, physicians gone quiet, and ramp curves for leaders.</p>${link(D.links.tableau, 'Tableau Public link to add')}</div>
+          <div><b>AI assistant</b><p>Plain-English questions, answered only from governed metrics. Runs locally.</p><code>streamlit run app.py</code></div>
+          <div><b>Code and tests</b><p>Semantic model, Cube files, tests, and GitHub Actions.</p>${link(D.links.github, 'GitHub link to add')}</div>
+        </div>
+      </div>
+    </section>`;
+}
+
+// ---------- CRM: Today ----------
+function renderToday() {
+  const r = role(), acc = visible(), ms = acc.map(a => [a, metrics(a)]);
+  const queue = ms.filter(([, m]) => m.cat !== 'ok' && m.cat !== 'plaque').sort((x, y) => priority(...x) - priority(...y));
+  const quiet = quietList(acc), tasks = openTasks(acc), overdue = tasks.filter(x => x.t.due < 0).length;
+  const recent = acc.flatMap(a => a.activities.filter(x => x.d <= 14).map(x => ({ a, x }))).sort((p, q) => p.x.d - q.x.d).slice(0, 6);
+  const who = r.terr ? TERR.find(t => t.name === r.terr).tam.split(' ')[0] : null;
+  const n = c => ms.filter(([, m]) => m.cat === c).length;
+  main.innerHTML = `
+    ${pageHead('CRM workspace · Today', who ? `Good morning, ${esc(who)}` : 'All territories', who ? `${esc(r.terr)}: who to see this week, and why, ranked from the governed signals.` : 'Every territory’s queue. Sign in as a TAM to see one person’s Monday.')}
+    ${rlsBanner()}
+    <section class="kpis">
+      <div class="kpi"><span class="lbl">Accounts needing action</span><span class="val">${queue.length}</span><span class="delta">${n('gap')} data gap · ${n('decline')} decline · ${n('quiet')} quiet · ${n('ramp')} ramp</span></div>
+      <div class="kpi"><span class="lbl">Physicians gone quiet</span><span class="val">${quiet.length}</span><span class="delta">${fmt(sum(quiet.map(x => x.p.p90)))} cases in the prior 90 days</span></div>
+      <div class="kpi"><span class="lbl">Open tasks</span><span class="val">${tasks.length}</span><span class="delta">${overdue ? `<span class="down">${overdue} overdue</span>` : 'None overdue'}</span></div>
+      <div class="kpi"><span class="lbl">Accounts</span><span class="val">${acc.length}</span><span class="delta"><button class="link" data-go="crm|accounts">Open the account list</button></span></div>
+    </section>
+    <section class="grid-2">
+      <div class="panel">
+        <div class="panel-head"><div><h2>Accounts needing action</h2><p class="sub">Data gaps first because they block the numbers, then real declines, quiet physicians, and slow ramps</p></div></div>
+        <div class="list">${queue.slice(0, 7).map(([a, m]) => `
+          <button class="item" data-open="${a.id}">
+            <span class="top"><span class="name"><span class="mono sm">${initials(a.name)}</span>${esc(a.name)}</span>${pill(m.cat)}</span>
+            <p>${m.cat === 'gap' ? `${a.gapDays} feed days missing · change not trusted` : m.cat === 'decline' ? `Cases ${delta(m.change)} (${fmt(a.p90)} to ${fmt(a.l90)})` : m.cat === 'quiet' ? `${m.quiet.length} quiet · ${fmt(m.atRisk)} cases at risk` : `Month ${a.live} · ${pct(m.util, 1)} utilization`}${r.terr ? '' : ` · ${esc(a.tam)}`}</p>
+          </button>`).join('') || '<p class="sub">Nothing needs action in this territory.</p>'}
+          ${queue.length > 7 ? `<button class="link" data-go="crm|accounts">See all ${queue.length}</button>` : ''}
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h2>Physicians to see this week</h2><p class="sub">Quiet ${QUIET_DAYS}+ days with 5+ lifetime cases, ranked by cases in the prior 90 days (the volume at risk)</p></div></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Physician</th><th class="num">At risk</th><th class="num">Quiet</th></tr></thead><tbody>
+        ${quiet.slice(0, 8).map(({ a, p }) => `<tr class="click" data-open="${a.id}" tabindex="0"><td><div class="who"><span class="avatar">${initials(p.name)}</span><div><div class="acct">${esc(p.name)}</div><div class="meta">${esc(a.name)}</div></div></div></td><td class="num"><b>${p.p90}</b></td><td class="num">${p.days}d</td></tr>`).join('') || '<tr><td colspan="3" class="sub">No quiet physicians.</td></tr>'}
+        </tbody></table></div>
+      </div>
+    </section>
+    <section class="grid-2 even">
+      <div class="panel"><div class="panel-head"><div><h2>Open tasks</h2><p class="sub">Salesforce Tasks created from Pulse. Check one off to complete it.</p></div></div>${taskList(tasks.slice(0, 8), true)}</div>
+      <div class="panel"><div class="panel-head"><div><h2>Recent activity</h2><p class="sub">Last 14 days</p></div></div>
+        <div class="log">${recent.map(({ a, x }) => `<div><span>${x.d === 0 ? '<span class="new">Today</span>' : x.d + 'd ago'}</span><span><b>${esc(x.type)}</b> · <button class="link" data-open="${a.id}">${esc(a.name)}</button><br>${esc(x.note)}</span></div>`).join('') || '<p class="sub">No activity in the last 14 days.</p>'}</div>
+      </div>
+    </section>`;
+}
+
+// ---------- CRM: Accounts ----------
+function renderAccounts() {
+  const wsum = Object.values(state.weights).reduce((a, b) => a + b, 0) || 1;
+  main.innerHTML = `
+    ${pageHead('CRM workspace · Accounts', 'Accounts', 'Signals come from the governed model. The priority score is a proposal to agree with TAMs before it is committed to the semantic model.')}
+    ${rlsBanner()}
+    <section class="panel">
+      <div class="panel-head"><div><h2>Priority score weights <span class="tag">Proposal</span></h2><p class="sub">Tune these with TAMs in a workshop. Once agreed, the score becomes one reviewed definition in the model. Lowest scores need attention first.</p></div>
+        <button class="chip" id="reset-w">Reset weights</button></div>
+      <div class="weights">${COMPONENTS.map(c => `
+        <label for="w-${c.key}"><span class="wl">${c.label}<b id="wv-${c.key}">${Math.round(state.weights[c.key] / wsum * 100)}%</b></span>
+          <input type="range" id="w-${c.key}" min="0" max="50" value="${state.weights[c.key]}" data-w="${c.key}"><small>${c.help}</small></label>`).join('')}
+      </div>
+      <div class="formula" id="formula"></div>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><div><h2>Accounts</h2><p class="sub">Select a row for the account record and next step</p></div><div class="filters" id="filters"></div></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr>
+          <th><button data-sort="name">Account</button></th><th><button data-sort="cat">Signal</button></th><th><button data-sort="score">Priority</button></th>
+          <th>Cases by month</th><th class="num"><button data-sort="l90">Cases 90d</button></th><th class="num"><button data-sort="change">Change</button></th>
+          <th class="num"><button data-sort="util">Est. util.</button></th><th class="num"><button data-sort="atRisk">Quiet</button></th><th class="num"><button data-sort="touch">Last touch</button></th>
+        </tr></thead><tbody id="acct-body"></tbody>
+      </table></div>
+    </section>`;
+  main.querySelectorAll('[data-w]').forEach(inp => inp.addEventListener('input', e => { state.weights[e.target.dataset.w] = +e.target.value; refreshAccounts(); }));
+  document.getElementById('reset-w').addEventListener('click', () => { COMPONENTS.forEach(c => { state.weights[c.key] = c.w; document.getElementById('w-' + c.key).value = c.w; }); refreshAccounts(); });
+  main.querySelectorAll('[data-sort]').forEach(b => b.addEventListener('click', () => {
+    const k = b.dataset.sort; state.sort = { key: k, dir: state.sort.key === k ? -state.sort.dir : (['name','cat','score','change','util','touch'].includes(k) ? 1 : -1) }; refreshAccounts();
+  }));
+  refreshAccounts();
+}
+function refreshAccounts() {
+  const wsum = Object.values(state.weights).reduce((a, b) => a + b, 0) || 1;
+  COMPONENTS.forEach(c => { document.getElementById('wv-' + c.key).textContent = Math.round(state.weights[c.key] / wsum * 100) + '%'; });
+  document.getElementById('formula').textContent = 'priority = ' + COMPONENTS.map(c => `${(state.weights[c.key] / wsum).toFixed(2)} × ${c.key}`).join(' + ') + '   (each scaled 0–100; trend skipped for data gaps)';
+  const rows = visible().map(a => ({ a, m: metrics(a) }));
+  const counts = { all: rows.length }; rows.forEach(r => counts[r.m.cat] = (counts[r.m.cat] || 0) + 1);
+  document.getElementById('filters').innerHTML = [['all', 'All'], ...CAT_ORDER.map(k => [k, CAT[k].label])]
+    .map(([k, l]) => `<button class="chip" aria-pressed="${state.filter === k}" data-f="${k}">${l}<span class="n">${counts[k] || 0}</span></button>`).join('');
+  document.querySelectorAll('[data-f]').forEach(b => b.addEventListener('click', () => { state.filter = b.dataset.f; refreshAccounts(); }));
+  const val = r => ({ name: r.a.name, cat: CAT_ORDER.indexOf(r.m.cat), score: r.m.score, l90: r.a.l90, change: r.m.cat === 'gap' ? 9 : (r.m.change ?? 0), util: r.m.util, atRisk: r.m.atRisk, touch: lastTouch(r.a) })[state.sort.key];
+  const list = rows.filter(r => state.filter === 'all' || r.m.cat === state.filter)
+    .sort((x, y) => { const a = val(x), b = val(y); return (typeof a === 'string' ? a.localeCompare(b) : a - b) * state.sort.dir; });
+  document.getElementById('acct-body').innerHTML = list.map(({ a, m }) => `
+    <tr class="click" data-open="${a.id}" tabindex="0">
+      <td><div class="who"><span class="mono">${initials(a.name)}</span><div><div class="acct">${esc(a.name)}</div><div class="meta">${a.type} · ${esc(a.terr)} · ${esc(a.tam)}</div></div></div></td>
+      <td>${pill(m.cat)}</td>
+      <td><div class="score"><b>${Math.round(m.score)}</b><span class="track"><span class="fill" style="width:${m.score}%"></span></span></div></td>
+      <td>${spark(a.m, 'var(--s1)')}</td>
+      <td class="num">${fmt(a.l90)}</td>
+      <td class="num">${m.cat === 'gap' ? `<span class="untrusted" title="${a.gapDays} feed days missing">Not trusted</span>` : delta(m.change)}</td>
+      <td class="num">${pct(m.util, 1)}</td>
+      <td class="num">${m.quiet.length ? `${m.quiet.length} <span class="meta">(${m.atRisk})</span>` : '<span class="muted">0</span>'}</td>
+      <td class="num">${lastTouch(a) === 0 ? 'Today' : lastTouch(a) + 'd'}</td>
+    </tr>`).join('') || '<tr><td colspan="9" class="sub">No accounts match this filter.</td></tr>';
+}
+
+// ---------- CRM: Activations ----------
+function renderActivations() {
+  const all = visible(), acc = all.filter(a => a.recent).map(a => ({ a, m: metrics(a) }));
+  const stages = [['First 90 days', x => x.a.live < 3], ['Ramping, months 3 to 8', x => x.a.live >= 3 && x.a.live < 9], ['Should be at full ramp, month 9+', x => x.a.live >= 9]];
+  const slow = x => x.a.live >= 3 && x.m.util < RAMP_UTIL;
+  const utils = acc.map(x => x.m.util).sort((p, q) => p - q);
+  const card = x => { const { a, m } = x; return `<div class="card">
+      <div class="top"><button class="link" data-open="${a.id}"><b>${esc(a.name)}</b></button>${slow(x) ? pill('ramp') : ''}</div>
+      <div class="meta">${a.type} · ${esc(a.terr)} · ${esc(a.tam)}</div>
+      <div class="meta">Live ${fmtDate(a.act)} · month ${a.live} · ${pct(m.util, 1)} utilization · ${a.actPhys} of ${a.phys.length} physicians ordering</div>
+      ${spark(a.m, 'var(--s1)', 220, 30)}
+      <div class="card-act"><button class="btn sm" data-handoff="${a.id}">${a.live < 3 ? 'Create TSM to TAM handoff task' : 'Create ramp review task'}</button></div>
+    </div>`; };
+  main.innerHTML = `
+    ${pageHead('CRM workspace · Activations', 'New accounts ramping', 'Accounts activated in the last 12 months, by months since go-live. A clear activation record is one of the Salesforce changes in the pitch.')}
+    ${rlsBanner()}
+    <section class="kpis">
+      <div class="kpi"><span class="lbl">Activated in last 12 months</span><span class="val">${acc.length}</span><span class="delta">${fmt(sum(acc.map(x => x.a.l90)))} cases in the last 90 days</span></div>
+      <div class="kpi"><span class="lbl">Under-ramped</span><span class="val">${acc.filter(slow).length}</span><span class="delta">3+ months live, below ${pct(RAMP_UTIL)} utilization</span></div>
+      <div class="kpi"><span class="lbl">Median utilization</span><span class="val">${utils.length ? pct(utils[Math.floor(utils.length / 2)], 1) : 'n/a'}</span><span class="delta">vs ${pct(totals(all).util, 1)} across all visible accounts</span></div>
+      <div class="kpi"><span class="lbl">Physicians not yet ordering</span><span class="val">${fmt(sum(acc.map(x => x.a.phys.length - x.a.actPhys)))}</span><span class="delta">at newly activated accounts</span></div>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><div><h2>Ramp board</h2><p class="sub">Stage is computed from the activation date, not moved by hand. Slowest first in each column.</p></div></div>
+      <div class="kanban-wrap"><div class="kanban">${stages.map(([name, f]) => { const cs = acc.filter(f).sort((p, q) => p.m.util - q.m.util); return `
+        <div class="col"><div class="col-h"><span>${name}</span><span>${cs.length}</span></div>${cs.map(card).join('') || '<p class="sub" style="padding:0 4px">None</p>'}</div>`; }).join('')}
+      </div></div>
+    </section>`;
+  main.querySelectorAll('[data-handoff]').forEach(b => b.addEventListener('click', () => {
+    const a = byId[b.dataset.handoff]; addTask(a, a.live < 3 ? 'Complete the TSM to TAM handoff' : 'Review the ramp plan with the site lead', a.tam, 7);
+    refreshView(); toast(`Task created for ${a.tam}. In production this writes a Salesforce Task.`);
+  }));
+}
+
+// ---------- Dashboard: Overview ----------
+function renderOverview() {
+  const acc = visible(), T = totals(acc), ms = acc.map(a => [a, metrics(a)]);
+  const series = [{ name:'FFRCT', color:'var(--s1)', values:T.F, area:true }, { name:'Plaque', color:'var(--s2)', values:T.PM }];
+  const groups = CAT_ORDER.map(c => ({ c, n: ms.filter(([, m]) => m.cat === c).length }));
+  const util = D.meta.months.map((_, i) => { const live = acc.filter(a => a.m[i] !== null); return sum(live.map(a => a.m[i])) / (sum(live.map(a => a.ccta90 / 3)) || 1); });
+  main.innerHTML = `
+    ${pageHead('Analytics dashboard', 'Business overview', 'Every number here is recomputed from the governed models and checked against the semantic layer on the build page.')}
+    ${rlsBanner()}
+    <section class="kpis">
+      <div class="kpi"><span class="lbl">Cases, last 90 days</span><span class="val">${fmt(T.l90)}</span><span class="delta">${delta(T.change)} vs prior 90 days (raw)</span><span class="kpi-spark">${areaSpark(T.M, 'var(--s1)', 220, 40)}</span></div>
+      <div class="kpi"><span class="lbl">Verified change</span><span class="val">${delta(T.verified)}</span><span class="delta">Leaves out ${T.gaps} data gap account${T.gaps === 1 ? '' : 's'}</span><span class="kpi-spark"><span class="mix" style="margin-top:16px;height:10px"><span style="flex:${T.n - T.gaps} 1 0;background:var(--s1)" title="Complete data: ${T.n - T.gaps}"></span>${T.gaps ? `<span style="flex:${T.gaps} 1 0;background:var(--accent-soft)" title="Data gap: ${T.gaps}"></span>` : ''}</span></span></div>
+      <div class="kpi"><span class="lbl">Estimated utilization</span><span class="val">${pct(T.util, 1)}</span><span class="delta">Cases ÷ estimated CCTAs; directional</span><span class="kpi-spark">${areaSpark(util, 'var(--s1)', 220, 40)}</span></div>
+      <div class="kpi"><span class="lbl">Plaque share, last 3 months</span><span class="val">${pct(T.plaqueShare3, 1)}</span><span class="delta">${delta(T.plaqueShare3 - T.plaqueSharePrev, true)} vs the 3 months before</span><span class="kpi-spark">${areaSpark(T.PM.map((v, i) => v / (T.M[i] || 1)), 'var(--s2)', 220, 40)}</span></div>
+    </section>
+    <section class="grid-2">
+      <div class="panel">
+        <div class="panel-head"><div><h2>Cases by month and product</h2><p class="sub">${MONTHS[0]} to ${MONTHS[MONTHS.length - 1]} · July, August, and December run lower in this data</p></div>${legend(series)}</div>
+        <div class="chart" id="ov-chart"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h2>Accounts by signal</h2><p class="sub">${acc.length} accounts</p></div></div>
+        <div class="mix" role="img" aria-label="${groups.map(g => `${CAT[g.c].label} ${g.n}`).join(', ')}">${groups.filter(g => g.n).map(g => `<span style="flex:${g.n} 1 0;background:${CAT[g.c].color}" title="${CAT[g.c].label}: ${g.n}"></span>`).join('')}</div>
+        <div class="mix-rows">${groups.map(g => `<div><span>${pill(g.c)}<br><span class="meta">${CAT[g.c].rule}</span></span><span class="num"><b>${g.n}</b></span></div>`).join('')}</div>
+      </div>
+    </section>`;
+  lineChart(document.getElementById('ov-chart'), MONTHS, series);
+}
+
+// ---------- Dashboard: Territories ----------
+function renderTerritories() {
+  const r = role();
+  const rows = TERR.filter(t => !r.terr || t.name === r.terr).map(t => { const acc = ACCOUNTS.filter(a => a.terr === t.name); return { t, T: totals(acc), quiet: quietList(acc).length }; });
+  const max = Math.max(...rows.map(x => x.T.l90));
+  main.innerHTML = `
+    ${pageHead('Analytics dashboard', 'Territory comparison', r.terr ? 'A TAM sees only their own territory. Regional leaders see all six side by side.' : 'Same definitions, six territories.')}
+    ${rlsBanner()}
+    <section class="panel">
+      <div class="panel-head"><div><h2>Cases, last 90 days</h2><p class="sub">By territory, with raw change vs the prior 90 days</p></div></div>
+      <div class="hbars">${rows.map(x => `<div class="hbar" title="${esc(x.t.name)}: ${fmt(x.T.l90)} cases"><span class="hl">${esc(x.t.name)}<small>${esc(x.t.tam)}</small></span><span class="htrack"><span style="width:${x.T.l90 / max * 100}%"></span></span><span class="hv">${fmt(x.T.l90)} <small>${delta(x.T.change)}</small></span></div>`).join('')}</div>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><div><h2>Scorecard</h2><p class="sub">Verified change leaves out accounts with missing feed days</p></div></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Territory</th><th class="num">Accounts</th><th class="num">Cases 90d</th><th class="num">Raw change</th><th class="num">Verified</th><th class="num">Est. util.</th><th class="num">Plaque share</th><th class="num">Data gaps</th><th class="num">Declines</th><th class="num">Quiet physicians</th></tr></thead>
+        <tbody>${rows.map(x => `<tr><td><div class="acct">${esc(x.t.name)}</div><div class="meta">${esc(x.t.tam)}</div></td><td class="num">${x.T.n}</td><td class="num">${fmt(x.T.l90)}</td><td class="num">${delta(x.T.change)}</td><td class="num">${delta(x.T.verified)}</td><td class="num">${pct(x.T.util, 1)}</td><td class="num">${pct(x.T.plaqueShare3, 1)}</td><td class="num">${x.T.gaps || '<span class="muted">0</span>'}</td><td class="num">${x.T.declines || '<span class="muted">0</span>'}</td><td class="num">${x.quiet}</td></tr>`).join('')}</tbody>
+      </table></div>
+    </section>`;
+}
+
+// ---------- Dashboard: Programs ----------
+function renderPrograms() {
+  const ev = D.events.filter(e => !role().terr || byId[e.account].terr === role().terr);
+  if (state.event >= ev.length) state.event = 0;
+  const sel = ev[state.event];
+  const summary = e => { const q = e.attendees.filter(x => x[4] === 'Went quiet').length, b = sum(e.attendees.map(x => x[2])), a = sum(e.attendees.map(x => x[3])); return { q, lift: a - b, partial: daysBefore(e.date) < 90 }; };
+  const STATUS_CLS = { 'Went quiet':'st-decline', 'Decreased':'st-quiet', 'Steady':'st-plaque', 'Increased':'st-ok', 'New orderer':'st-ok', 'No orders':'st-plaque' };
+  let detail = '<p class="sub">No programs in this territory.</p>';
+  if (sel) {
+    const s = summary(sel), mx = Math.max(1, ...sel.attendees.flatMap(x => [x[2], x[3]]));
+    detail = `<div class="panel-head"><div><h2>${esc(sel.name)}</h2><p class="sub">${esc(sel.type)} · ${fmtDate(sel.date)} · <button class="link" data-open="${sel.account}">${esc(byId[sel.account].name)}</button>${s.partial ? ' · after window still filling' : ''}</p></div></div>
+      <div class="kpis" style="grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:12px">
+        <div class="kpi"><span class="lbl">Attendees</span><span class="val">${sel.attendees.length}</span></div>
+        <div class="kpi"><span class="lbl">Went quiet</span><span class="val ${s.q ? 'down' : ''}">${s.q}</span></div>
+        <div class="kpi"><span class="lbl">Case lift</span><span class="val ${s.lift < 0 ? 'down' : 'up'}">${s.lift >= 0 ? '+' : '−'}${Math.abs(s.lift)}</span></div>
+      </div>
+      <div class="legend" style="margin-bottom:8px"><span><i style="background:var(--axis)"></i>90 days before</span><span><i style="background:var(--s1)"></i>90 days after</span></div>
+      <div class="att">${sel.attendees.map(x => `<div><span><b>${esc(x[0])}</b><br><span class="meta">${esc(x[1])}</span></span><span class="ba" title="${x[2]} before, ${x[3]} after"><span class="b" style="width:${x[2] / mx * 100}%"></span><span class="a" style="width:${x[3] / mx * 100}%"></span><span class="meta">${x[2]} → ${x[3]}</span></span><span class="pill ${STATUS_CLS[x[4]] || 'st-plaque'}">${esc(x[4])}</span></div>`).join('')}</div>`;
+  }
+  main.innerHTML = `
+    ${pageHead('Analytics dashboard', 'Program follow-up', 'Did a dinner program, VIP visit, or road show change ordering? Each attendee’s cases in the 90 days before vs after.')}
+    ${rlsBanner()}
+    <section class="grid-2 even">
+      <div class="panel">
+        <div class="panel-head"><div><h2>Programs</h2><p class="sub">Most recent first. Select one to see attendees.</p></div></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Program</th><th class="num">Attendees</th><th class="num">Went quiet</th><th class="num">Lift</th></tr></thead><tbody>
+          ${ev.map((e, i) => { const s = summary(e); return `<tr class="click ${i === state.event ? 'sel' : ''}" data-ev="${i}" tabindex="0"><td><div class="acct">${esc(e.name)}</div><div class="meta">${fmtDate(e.date)} · ${esc(byId[e.account].terr)}${s.partial ? ' · partial' : ''}</div></td><td class="num">${e.attendees.length}</td><td class="num ${s.q ? 'down' : ''}">${s.q}</td><td class="num">${s.lift >= 0 ? '+' : '−'}${Math.abs(s.lift)}</td></tr>`; }).join('')}
+        </tbody></table></div>
+      </div>
+      <div class="panel">${detail}</div>
+    </section>`;
+  main.querySelectorAll('[data-ev]').forEach(rw => rw.addEventListener('click', () => { state.event = +rw.dataset.ev; refreshView(); }));
+}
+
+// ---------- Dashboard: Compliance ----------
+function renderCompliance() {
+  const terr = role().terr, money = n => '$' + fmt(n);
+  const pay = PAY.filter(p => daysBefore(p.date) < 365 && byId[p.acct] && (!terr || byId[p.acct].terr === terr));
+  const byDoc = {};
+  pay.forEach(p => { const k = p.acct + '|' + p.name; (byDoc[k] = byDoc[k] || { name: p.name, acct: p.acct, items: [], total: 0 }); byDoc[k].items.push(p); byDoc[k].total += p.amount; });
+  const docs = Object.values(byDoc).sort((x, y) => y.total - x.total);
+  const total = sum(pay.map(p => p.amount)), review = docs.filter(d => d.total >= REVIEW_LIMIT), near = docs.filter(d => d.total >= REVIEW_LIMIT * .75 && d.total < REVIEW_LIMIT);
+  const cats = {}; pay.forEach(p => { cats[p.type] = cats[p.type] || { amount: 0, n: 0 }; cats[p.type].amount += p.amount; cats[p.type].n++; });
+  const catRows = Object.entries(cats).sort((a, b) => b[1].amount - a[1].amount), cmax = Math.max(1, ...catRows.map(c => c[1].amount));
+  const status = t => t >= REVIEW_LIMIT ? '<span class="pill st-decline">Review required</span>' : t >= REVIEW_LIMIT * .75 ? '<span class="pill st-ramp">Approaching threshold</span>' : '<span class="pill st-ok">Within threshold</span>';
+  const shown = docs.slice(0, 40);
+  main.innerHTML = `
+    ${pageHead('Analytics dashboard', 'Compliance: transfers of value', `Meals, travel, and speaker fees provided to physicians in the 12 months to ${fmtDate(D.meta.as_of)}, recorded per physician to support Open Payments reporting. Available to compliance and regional leadership only.`)}
+    ${rlsBanner()}
+    <section class="kpis">
+      <div class="kpi"><span class="lbl">Transfers of value, 12 months</span><span class="val">${money(total)}</span><span class="delta">${fmt(pay.length)} items recorded</span></div>
+      <div class="kpi"><span class="lbl">Physicians with transfers</span><span class="val">${docs.length}</span><span class="delta">across ${new Set(pay.map(p => p.acct)).size} accounts</span></div>
+      <div class="kpi"><span class="lbl">Speaker fees</span><span class="val">${money(cats['Speaker fee'] ? cats['Speaker fee'].amount : 0)}</span><span class="delta">${cats['Speaker fee'] ? cats['Speaker fee'].n : 0} engagements</span></div>
+      <div class="kpi"><span class="lbl">Review required</span><span class="val ${review.length ? 'down' : ''}">${review.length}</span><span class="delta">${near.length} approaching the ${money(REVIEW_LIMIT)} threshold</span></div>
+    </section>
+    <section class="grid-2">
+      <div class="panel">
+        <div class="panel-head"><div><h2>Transfers by physician</h2><p class="sub">Highest total first${docs.length > shown.length ? `, showing ${shown.length} of ${docs.length}` : ''}. Select a row to open the account.</p></div></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Physician</th><th>Items</th><th class="num">12-month total</th><th>Status</th></tr></thead><tbody>
+        ${shown.map(d => `<tr class="click" data-open="${d.acct}" tabindex="0"><td><div class="who"><span class="avatar">${initials(d.name)}</span><div><div class="acct">${esc(d.name)}</div><div class="meta">${esc(byId[d.acct].name)} · ${esc(byId[d.acct].terr)}</div></div></div></td>
+          <td class="meta" style="white-space:normal;min-width:240px">${d.items.map(p => `${esc(p.type)} ${money(p.amount)} · ${esc(p.event)}`).join('<br>')}</td>
+          <td class="num"><b>${money(d.total)}</b></td><td>${status(d.total)}</td></tr>`).join('') || '<tr><td colspan="4" class="sub">No transfers recorded in this period.</td></tr>'}
+        </tbody></table></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h2>By category</h2><p class="sub">12-month total</p></div></div>
+        <div class="hbars">${catRows.map(([k, v]) => `<div class="hbar" style="grid-template-columns:150px minmax(0,1fr) 100px" title="${esc(k)}: ${money(v.amount)}"><span class="hl">${esc(k)}<small>${v.n} items</small></span><span class="htrack"><span style="width:${v.amount / cmax * 100}%"></span></span><span class="hv">${money(v.amount)}</span></div>`).join('')}</div>
+        <div class="check" style="margin-top:16px"><span class="pill st-gap">Note</span><div><b>How this works in production</b><p>Spend is recorded on the Salesforce Event for each program and linked to the physician by NPI, one of the proposed Salesforce changes. The ${money(REVIEW_LIMIT)} review threshold is illustrative and would be set by Compliance.</p></div></div>
+      </div>
+    </section>`;
+}
+
+// ---------- How it's built ----------
+function qualityChecks() {
+  const out = [], G = D.governed, T = totals(ACCOUNTS), o = G.overall;
+  const r1 = x => Math.round(x * 1000) / 10, r3 = x => Math.round(x * 1000) / 1000;
+  const mine = { account_count: T.n, cases_last_90d: T.l90, cases_prior_90d: T.p90, case_change_pct: r1(T.change), verified_case_change_pct: r1(T.verified), est_utilization: r3(T.util), accounts_with_data_gaps: T.gaps };
+  const miss = Object.keys(mine).filter(k => Math.abs(mine[k] - o[k]) > 1e-9);
+  const terrMiss = TERR.filter(t => { const x = totals(ACCOUNTS.filter(a => a.terr === t.name)), g = G.by_territory[t.name]; return !g || x.l90 !== g.cases_last_90d || r1(x.change) !== g.case_change_pct || r3(x.util) !== g.est_utilization; }).map(t => t.name);
+  out.push({ state: miss.length || terrMiss.length ? 'fail' : 'pass', title: 'Pulse totals match the semantic layer',
+    note: miss.length || terrMiss.length ? `Mismatch in ${[...miss, ...terrMiss].join(', ')}.` : `${fmt(T.l90)} cases, ${pct(T.util, 1)} utilization, ${r1(T.change)}% raw and ${r1(T.verified)}% verified change: identical to the governed measures, overall and in all ${TERR.length} territories.` });
+  const banned = /patient|dob|birth|mrn|ssn/i, keys = [...Object.keys(D.accounts[0]), 'physician_id', 'physician_name', 'specialty', 'account_id', 'last_case_date', 'cases_last_90d', 'cases_prior_90d', 'lifetime_cases', 'activity_status'];
+  out.push({ state: keys.some(k => banned.test(k)) ? 'fail' : 'pass', title: 'No patient fields reach the CRM', note: 'Pulse receives account and physician aggregates only. The same rule fails the build in test_no_patient_columns_anywhere.' });
+  const gaps = ACCOUNTS.filter(a => a.signal === 'Data gap');
+  out.push({ state: gaps.length ? 'warn' : 'pass', title: 'Case feed coverage', note: gaps.length ? `${gaps.map(a => `${a.name} (${a.gapDays} days)`).join(', ')} have missing feed days. They are labeled Data gap, routed to the data owner, and left out of the verified change.` : 'Every account’s feed arrived on every day.' });
+  const orphan = PAY.filter(p => !byId[p.acct]).length;
+  out.push({ state: orphan ? 'fail' : 'pass', title: 'Transfers of value link to known accounts', note: orphan ? `${orphan} transfers reference an unknown account.` : `All ${fmt(PAY.length)} transfers link to an account and a program attendee.` });
+  const partial = D.events.filter(e => daysBefore(e.date) < 90);
+  out.push({ state: partial.length ? 'warn' : 'pass', title: 'Program follow-up windows complete', note: partial.length ? `${partial.length} programs are less than 90 days old, so their after window is still filling. They are marked partial.` : 'All follow-up windows are complete.' });
+  return out;
+}
+const CODE_TABS = [['cube', 'cube/model/cases.yml'], ['signal', 'semantic_model.yaml (accounts)'], ['test', 'tests/test_semantic_layer.py'], ['workflow', '.github/workflows/tests.yml']];
+function renderBuilt() {
+  const checks = qualityChecks(), badge = { pass: ['ok', 'Pass'], warn: ['gap', 'Flagged'], fail: ['decline', 'Fail'] };
+  const node = (b, s, cls = '') => `<div class="node ${cls}"><b>${b}</b><span>${s}</span></div>`;
+  main.innerHTML = `
+    ${pageHead('How it’s built', 'One governed layer between data and decisions', 'Pulse is generated by export_for_pulse.py from the same model files Tableau and the assistant use. Nothing here is a second copy of a metric.')}
+    <section class="panel">
+      <div class="arch">
+        <div class="arch-row" style="--n:3">${node('Production case system', 'cases, ordering physician')}${node('NetSuite', 'contracts, pricing, rebates')}${node('Salesforce', 'accounts, physicians, activity')}</div>
+        <div class="arch-down" aria-hidden="true">↓</div>
+        <div class="arch-row" style="--n:1">${node('Redshift warehouse, loaded by Dagster and dbt', 'one row per case, joined to account, physician, and contract')}</div>
+        <div class="arch-down" aria-hidden="true">↓</div>
+        <div class="arch-row" style="--n:1">${node('Cube semantic model, in Git', 'utilization, physicians gone quiet, data coverage, ramp, program follow-up', 'key')}</div>
+        <div class="arch-down" aria-hidden="true">↓</div>
+        <div class="arch-row" style="--n:4">${node('Tableau dashboard', 'leaders and TAMs')}${node('Pulse CRM', 'this app: next actions', 'me')}${node('AI assistant', 'plain-English questions', 'next')}${node('Tasks in Salesforce', 'next steps, written back', 'next')}</div>
+        <div class="arch-foot">No patient data leaves production · territory security enforced once · tests on every pull request</div>
+      </div>
+    </section>
+    <section class="grid-2">
+      <div class="panel">
+        <div class="panel-head"><div><h2>The real project files</h2><p class="sub">Embedded at build time from the repository</p></div></div>
+        <div class="codetabs">${CODE_TABS.map(([k, l]) => `<button class="chip" data-code="${k}" aria-pressed="${state.codeTab === k}">${l}</button>`).join('')}</div>
+        <pre class="code" id="code"></pre>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><h2>Live checks</h2><p class="sub">Run in your browser against the data Pulse received</p></div></div>
+        <div class="checks">${checks.map(c => `<div class="check">${pill(badge[c.state][0], badge[c.state][1])}<div><b>${c.title}</b><p>${esc(c.note)}</p></div></div>`).join('')}</div>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="panel-head"><div><h2>The first 90 days</h2><p class="sub">Cut first if time runs short: the AI assistant. Never cut: the governed model and its tests.</p></div></div>
+      <div class="phases">
+        <div class="phase"><small>Days 1 to 30</small><b>Learn</b><ul><li>Shadow three TAMs and a regional leader</li><li>Profile Salesforce data: hierarchy, NPIs, activations</li><li>Agree what “activated” and “active physician” mean</li></ul></div>
+        <div class="phase"><small>Days 31 to 60</small><b>Build</b><ul><li>Cube models and data tests in CI</li><li>The dashboard and Pulse for one region</li><li>Fix the top data defects at the source</li></ul></div>
+        <div class="phase"><small>Days 61 to 90</small><b>Pilot</b><ul><li>Two territories against matched territories</li><li>Track adoption and leading metrics</li><li>Decide what to scale</li></ul></div>
+      </div>
+    </section>`;
+  const show = () => { document.getElementById('code').textContent = D.code[state.codeTab]; main.querySelectorAll('[data-code]').forEach(x => x.setAttribute('aria-pressed', x.dataset.code === state.codeTab)); };
+  main.querySelectorAll('[data-code]').forEach(b => b.addEventListener('click', () => { state.codeTab = b.dataset.code; show(); }));
+  show();
+}
+
+// ---------- Account drawer ----------
+function openAccount(id) { if (!byId[id]) return; state.open = id; renderDrawer(false); document.querySelector('.drawer .close').focus(); }
+function closeAccount() { state.open = null; document.getElementById('drawer-root').innerHTML = ''; }
+function renderDrawer(keep) {
+  const a = byId[state.open]; if (!a) return;
+  const old = document.querySelector('.drawer'), scroll = keep && old ? old.scrollTop : 0;
+  const m = metrics(a), root = document.getElementById('drawer-root');
+  const start = Math.max(0, a.m.findIndex(v => v !== null));
+  const series = [{ name:'All cases', color:'var(--s1)', values:a.m.slice(start), area:true }, { name:'Plaque', color:'var(--s2)', values:a.pm.slice(start) }];
+  const order = { 'Recently quiet':0, 'Active':1, 'Lapsed':2, 'Never ordered':3 };
+  const phys = [...a.phys].sort((x, y) => (isQuiet(y) - isQuiet(x)) || (y.p90 - x.p90) || (order[x.status] - order[y.status]) || (y.l90 - x.l90));
+  const PST = { 'Active':'st-ok', 'Recently quiet':'st-quiet', 'Lapsed':'st-decline', 'Never ordered':'st-plaque' };
+  const open = a.tasks.filter(t => !t.done);
+  const [ttitle, towner] = taskFor(a, m);
+  root.innerHTML = `
+    <div class="drawer-bg" data-close></div>
+    <aside class="drawer${keep ? '' : ' enter'}" role="dialog" aria-modal="true" aria-labelledby="dr-title">
+      <div class="dh"><span class="mono lg">${initials(a.name)}</span><div style="flex:1;min-width:0"><div class="meta">${a.id} · ${a.type} · ${esc(a.terr)} · ${esc(a.tam)}</div><h2 id="dr-title">${esc(a.name)}</h2>
+        <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">${pill(m.cat)}<span class="meta">Live since ${fmtDate(a.act)} · Plaque ${a.plaqueAct ? 'since ' + fmtDate(a.plaqueAct) : 'not activated'} · last touch ${lastTouch(a) === 0 ? 'today' : lastTouch(a) + 'd ago'}</span></div></div>
+        <button class="close" data-close aria-label="Close">×</button></div>
+      <div class="nba ${m.cat === 'gap' ? 'gap' : ''}"><div class="lbl">Recommended next step</div><p>${esc(nextAction(a, m))}</p>
+        <div class="nba-actions"><button class="btn primary" id="nb-task">Create Salesforce Task for ${esc(towner)}</button><button class="btn" id="nb-log">Log a ${ACT_FOR[m.cat] === 'QBR' ? 'QBR' : ACT_FOR[m.cat].toLowerCase()}</button></div></div>
+      <div class="facts">
+        <div class="fact"><div class="k">Cases 90d</div><div class="v">${fmt(a.l90)}</div></div>
+        <div class="fact"><div class="k">vs prior 90d</div><div class="v">${m.cat === 'gap' ? '<span class="untrusted">Not trusted</span>' : delta(m.change)}</div></div>
+        <div class="fact"><div class="k">Est. utilization</div><div class="v">${pct(m.util, 1)}</div></div>
+        <div class="fact"><div class="k">Ordering physicians</div><div class="v">${a.actPhys}<span class="meta"> / ${a.phys.length}</span></div></div>
+        <div class="fact"><div class="k">Missing feed days</div><div class="v ${a.gapDays ? 'untrusted' : ''}">${a.gapDays}</div></div>
+      </div>
+      <div class="panel"><div class="panel-head"><div><h2>Open tasks</h2><p class="sub">Written back to Salesforce as Tasks</p></div></div>${taskList(open.map(t => ({ a, t })), false)}</div>
+      <div class="panel"><div class="panel-head"><div><h2>Cases by month</h2><p class="sub">${MONTHS[start]} to ${MONTHS[MONTHS.length - 1]}${a.gapDays ? ` · ${a.gapDays} missing feed days pull the latest months down` : ''}</p></div>${legend(series)}</div><div class="chart" id="dr-chart"></div></div>
+      <div class="panel"><div class="panel-head"><div><h2>Physicians</h2><p class="sub">Gone quiet first, ranked by cases in the prior 90 days</p></div></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Physician</th><th>Status</th><th class="num">90d</th><th class="num">Prior 90d</th><th class="num">Last case</th></tr></thead><tbody>
+        ${phys.map(p => `<tr><td><div class="who"><span class="avatar">${initials(p.name)}</span><div><div class="acct">${esc(p.name)}</div><div class="meta">${esc(p.spec)}${isQuiet(p) ? ' · <span class="down">gone quiet</span>' : ''}</div></div></div></td><td><span class="pill ${PST[p.status]}">${p.status}</span></td><td class="num">${p.l90}</td><td class="num">${p.p90}</td><td class="num">${p.days === null ? '<span class="muted">never</span>' : p.days + 'd ago'}</td></tr>`).join('')}
+        </tbody></table></div></div>
+      ${a.events.length ? `<div class="panel"><div class="panel-head"><div><h2>Programs at this account</h2><p class="sub">Attendee cases, 90 days before vs after</p></div></div>
+        ${a.events.map(e => { const q = e.attendees.filter(x => x[4] === 'Went quiet'); return `<p style="margin:0 0 6px"><b>${esc(e.name)}</b> <span class="meta">· ${fmtDate(e.date)}</span><br>${e.attendees.length} attendees, ${sum(e.attendees.map(x => x[2]))} cases before → ${sum(e.attendees.map(x => x[3]))} after${q.length ? `. <span class="down">Went quiet: ${esc(q.map(x => x[0]).join(', '))}</span>` : ''}.</p>`; }).join('')}</div>` : ''}
+      <form class="panel form" id="log-form" novalidate>
+        <div class="panel-head" style="margin-bottom:0"><div><h2>Log activity</h2><p class="sub">Saved to the timeline; a Salesforce Activity record in production</p></div></div>
+        <div class="frow">
+          <label class="f" for="lf-type">Type<select id="lf-type">${['Call','Site visit','Email','QBR','Program follow-up'].map(t => `<option>${t}</option>`).join('')}</select></label>
+          <label class="f" for="lf-phys">With<select id="lf-phys"><option value="">No specific physician</option>${phys.slice(0, 25).map(p => `<option>${esc(p.name)}</option>`).join('')}</select></label>
+        </div>
+        <label class="f" for="lf-note">Notes<textarea id="lf-note" rows="2" placeholder="What happened, and what comes next?"></textarea></label>
+        <div class="factions"><label class="inline" for="lf-task"><input type="checkbox" id="lf-task"> Create a follow-up Task in 14 days</label><button class="btn primary" type="submit">Log activity</button></div>
+      </form>
+      <div><h3 class="h3">Activity timeline</h3><div class="log">${a.activities.map(x => `<div><span>${x.d === 0 ? '<span class="new">Today</span>' : x.d + 'd ago'}</span><span><b>${esc(x.type)}.</b> ${esc(x.note)}</span></div>`).join('')}</div>
+        <p class="sub" style="margin-top:8px">Calls, visits, and emails are seeded demo CRM activity. Programs come from the events data.</p></div>
+    </aside>`;
+  root.querySelector('.drawer').scrollTop = scroll;
+  lineChart(document.getElementById('dr-chart'), MONTHS.slice(start), series, 200);
+  root.querySelectorAll('[data-close]').forEach(el => el.addEventListener('click', closeAccount));
+  const form = document.getElementById('log-form'), typeSel = document.getElementById('lf-type');
+  document.getElementById('nb-task').addEventListener('click', () => {
+    addTask(a, ttitle, towner, 7); renderDrawer(true); refreshView();
+    toast(`Task created for ${towner}, due in 7 days. In production this writes a Salesforce Task.`);
+  });
+  document.getElementById('nb-log').addEventListener('click', () => {
+    typeSel.value = ACT_FOR[m.cat]; form.scrollIntoView({ behavior: 'smooth', block: 'center' }); document.getElementById('lf-note').focus({ preventScroll: true });
+  });
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const before = Math.round(metrics(a).score), type = typeSel.value, withP = document.getElementById('lf-phys').value, note = document.getElementById('lf-note').value.trim();
+    a.activities.unshift({ d: 0, type, note: (withP ? `With ${withP}. ` : '') + (note || 'No notes added.') });
+    if (document.getElementById('lf-task').checked) addTask(a, `Follow up after the ${type === 'QBR' ? 'QBR' : type.toLowerCase()}`, a.tam, 14);
+    const after = Math.round(metrics(a).score);
+    renderDrawer(true); refreshView();
+    toast(`${type} logged. Priority score ${before} → ${after}.`);
+  });
+}
+
+// ---------- Shell ----------
+const AREAS = [{ id:'hub', label:'Home', hash:'home' }, { id:'crm', label:'CRM', hash:'crm' }, { id:'dash', label:'Dashboard', hash:'dashboard' }, { id:'built', label:'How it’s built', hash:'built' }];
+const SUBTABS = () => ({ hub: [], built: [],
+  crm: [{ id:'today', label:'Today' }, { id:'accounts', label:'Accounts' }, { id:'activations', label:'Activations' }],
+  dash: [{ id:'overview', label:'Overview' }, { id:'territories', label:'Territories' }, { id:'programs', label:'Programs' }, ...(role().compliance ? [{ id:'compliance', label:'Compliance' }] : [])] });
+const VIEWS = { hub: renderHub, today: renderToday, accounts: renderAccounts, activations: renderActivations, overview: renderOverview, territories: renderTerritories, programs: renderPrograms, compliance: renderCompliance, built: renderBuilt };
+const currentView = () => SUBTABS()[state.area].length ? state.sub[state.area] : state.area;
+const roleSel = document.getElementById('role');
+roleSel.innerHTML = ROLES.map(r => `<option value="${esc(r.id)}">${esc(r.label)}</option>`).join('');
+roleSel.addEventListener('change', e => { state.role = e.target.value; state.event = 0; closeAccount(); render(); });
+function setRole(id) { if (ROLES.some(r => r.id === id)) { state.role = id; roleSel.value = id; state.event = 0; } }
+function goto(area, sub) {
+  state.area = area; if (sub) state.sub[area] = sub;
+  closeAccount(); render(); window.scrollTo(0, 0);
+  try { history.replaceState(null, '', '#' + AREAS.find(a => a.id === area).hash); } catch (e) {}
+}
+function render() {
+  const subs = SUBTABS()[state.area];
+  if (subs.length && !subs.some(t => t.id === state.sub[state.area])) state.sub[state.area] = subs[0].id;
+  document.getElementById('areas').innerHTML = AREAS.map(a => `<button data-go="${a.id}" ${state.area === a.id ? 'aria-current="page"' : ''}>${a.label}</button>`).join('');
+  const tabs = document.getElementById('tabs');
+  tabs.hidden = !subs.length;
+  tabs.innerHTML = subs.map(t => `<button role="tab" aria-selected="${state.sub[state.area] === t.id}" data-go="${state.area}|${t.id}">${t.label}</button>`).join('');
+  VIEWS[currentView()]();
+}
+document.addEventListener('click', e => {
+  const go = e.target.closest('[data-go]');
+  if (go) {
+    if (go.dataset.role) setRole(go.dataset.role);
+    if (go.dataset.filter) state.filter = go.dataset.filter;
+    const [area, sub] = go.dataset.go.split('|');
+    goto(area, sub);
+    if (go.dataset.thenOpen) openAccount(go.dataset.thenOpen);
+    return;
+  }
+  const t = e.target.closest('[data-open]'); if (t) openAccount(t.dataset.open);
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && state.open) closeAccount();
+  if (e.key === 'Enter' && e.target.matches('tr[data-open]')) openAccount(e.target.dataset.open);
+  if (e.key === 'Enter' && e.target.matches('tr[data-ev]')) e.target.click();
+});
+let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (currentView() === 'overview') renderOverview(); if (state.open) renderDrawer(true); }, 150); });
+document.getElementById('foot').textContent = `Concept prototype by Rutuja Hande. All data is synthetic, generated by generate_data.py (snapshot ${fmtDate(D.meta.as_of)}), with no patient data anywhere. Built from ${D.meta.source} by export_for_pulse.py.`;
+const startArea = AREAS.find(a => '#' + a.hash === location.hash);
+if (startArea) state.area = startArea.id;
+render();
+</script>

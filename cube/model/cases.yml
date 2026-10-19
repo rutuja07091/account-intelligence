@@ -1,0 +1,81 @@
+# The cases, accounts, and physicians models written for Cube.
+# Validated and run locally with Cube 1.8.8 on DuckDB (see cube/README.md).
+# Table names use a `commercial` schema, as they would in Redshift.
+
+cubes:
+  - name: cases
+    sql_table: commercial.cases
+    joins:
+      - name: accounts
+        sql: "{CUBE}.account_id = {accounts}.account_id"
+        relationship: many_to_one
+      - name: physicians
+        sql: "{CUBE}.ordering_physician_id = {physicians}.physician_id"
+        relationship: many_to_one
+    dimensions:
+      - name: case_id
+        sql: case_id
+        type: string
+        primary_key: true
+      - name: product
+        sql: product
+        type: string
+      - name: completed_date
+        sql: completed_date
+        type: time
+    measures:
+      - name: case_count
+        type: count
+        description: Number of completed cases
+      - name: ordering_physicians
+        sql: ordering_physician_id
+        type: count_distinct
+        description: Distinct physicians who ordered at least one case
+      - name: plaque_cases
+        type: count
+        filters:
+          - sql: "{CUBE}.product = 'Plaque'"
+      - name: plaque_share
+        sql: "{plaque_cases} * 1.0 / NULLIF({case_count}, 0)"
+        type: number
+        format: percent
+
+  - name: accounts
+    sql: >
+      SELECT a.*, t.territory_name AS territory, t.tam_name
+      FROM commercial.accounts a
+      JOIN commercial.territories t ON t.territory_id = a.territory_id
+    dimensions:
+      - name: account_id
+        sql: account_id
+        type: string
+        primary_key: true
+      - name: account_name
+        sql: account_name
+        type: string
+      - name: account_type
+        sql: account_type
+        type: string
+      - name: territory
+        sql: territory
+        type: string
+      - name: tam_name
+        sql: tam_name
+        type: string
+    measures:
+      - name: account_count
+        type: count
+
+  - name: physicians
+    sql_table: commercial.physicians
+    dimensions:
+      - name: physician_id
+        sql: physician_id
+        type: string
+        primary_key: true
+      - name: physician_name
+        sql: physician_name
+        type: string
+      - name: specialty
+        sql: specialty
+        type: string

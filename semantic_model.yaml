@@ -1,0 +1,275 @@
+# Governed metric definitions.
+#
+# This file plays the role Cube plays in production: every number the assistant
+# can show is defined here once, in code, reviewed through a pull request.
+# The language model never writes SQL. It can only ask for measures and
+# dimensions listed below, and semantic_layer.py turns that request into SQL.
+#
+# {as_of} is replaced with the data snapshot date. Every model exposes a
+# `territory` dimension so row level security can be applied the same way
+# everywhere.
+
+as_of_date: "2026-09-30"
+
+models:
+
+  cases:
+    description: >
+      One row per completed Heartflow analysis (FFRCT or Plaque), with the
+      account and ordering physician that sent it. Use for volume, product mix,
+      and trends over time. Contains no patient information.
+    time_dimension: completed_date
+    sql: |
+      SELECT c.case_id, c.completed_date, c.product,
+             a.account_id, a.account_name, a.account_type,
+             t.territory_name AS territory, t.tam_name,
+             p.physician_id, p.physician_name, p.specialty
+      FROM cases c
+      JOIN accounts a    ON a.account_id = c.account_id
+      JOIN physicians p  ON p.physician_id = c.ordering_physician_id
+      JOIN territories t ON t.territory_id = a.territory_id
+      WHERE c.completed_date <= {as_of}
+    dimensions:
+      account_name:   {sql: account_name,   description: Account name}
+      account_type:   {sql: account_type,   description: "Hospital, Clinic, or Office"}
+      territory:      {sql: territory,      description: Sales territory}
+      tam_name:       {sql: tam_name,       description: Territory Account Manager who owns the account}
+      physician_name: {sql: physician_name, description: Ordering physician}
+      specialty:      {sql: specialty,      description: Ordering physician specialty}
+      product:        {sql: product,        description: "FFRCT or Plaque"}
+      case_month:     {sql: "strftime(completed_date, '%Y-%m')", description: "Month the case completed, YYYY-MM"}
+      case_quarter:   {sql: "strftime(completed_date, '%Y') || '-Q' || quarter(completed_date)", description: "Quarter the case completed, YYYY-Qn"}
+    measures:
+      case_count:          {sql: "count(*)", description: Number of completed cases}
+      ordering_physicians: {sql: "count(DISTINCT physician_id)", description: Distinct physicians who ordered at least one case}
+      plaque_cases:        {sql: "sum(CASE WHEN product = 'Plaque' THEN 1 ELSE 0 END)", description: Number of Plaque cases}
+      plaque_share:        {sql: "round(avg(CASE WHEN product = 'Plaque' THEN 1.0 ELSE 0 END), 3)", description: Share of cases that were Plaque (0 to 1)}
+      accounts_with_cases: {sql: "count(DISTINCT account_id)", description: Distinct accounts that sent at least one case}
+
+  physician_activity:
+    description: >
+      One row per physician with their ordering status as of the snapshot date.
+      Active = ordered in the last 90 days. Recently quiet = ordered in the
+      90 days before that but not since. Lapsed = last order more than 180
+      days ago. Never ordered = no cases on record.
+    sql: |
+      WITH stats AS (
+        SELECT ordering_physician_id AS physician_id,
+               max(completed_date) AS last_case_date,
+               count(*) FILTER (WHERE completed_date > {as_of} - INTERVAL 90 DAY) AS cases_last_90d,
+               count(*) FILTER (WHERE completed_date >  {as_of} - INTERVAL 180 DAY
+                                  AND completed_date <= {as_of} - INTERVAL 90 DAY) AS cases_prior_90d,
+               count(*) AS lifetime_cases
+        FROM cases
+        WHERE completed_date <= {as_of}
+        GROUP BY 1
+      )
+      SELECT p.physician_id, p.physician_name, p.specialty,
+             a.account_id, a.account_name, a.account_type,
+             t.territory_name AS territory, t.tam_name,
+             s.last_case_date,
+             coalesce(s.cases_last_90d, 0)  AS cases_last_90d,
+             coalesce(s.cases_prior_90d, 0) AS cases_prior_90d,
+             coalesce(s.lifetime_cases, 0)  AS lifetime_cases,
+             date_diff('day', s.last_case_date, {as_of}) AS days_since_last_case,
+             CASE WHEN s.physician_id IS NULL     THEN 'Never ordered'
+                  WHEN s.cases_last_90d > 0        THEN 'Active'
+                  WHEN s.cases_prior_90d > 0       THEN 'Recently quiet'
+                  ELSE 'Lapsed' END AS activity_status
+      FROM physicians p
+      JOIN accounts a    ON a.account_id = p.account_id
+      JOIN territories t ON t.territory_id = a.territory_id
+      LEFT JOIN stats s  ON s.physician_id = p.physician_id
+    dimensions:
+      physician_name:  {sql: physician_name,  description: Physician}
+      specialty:       {sql: specialty,       description: Physician specialty}
+      account_name:    {sql: account_name,    description: Account the physician belongs to}
+      account_type:    {sql: account_type,    description: "Hospital, Clinic, or Office"}
+      territory:       {sql: territory,       description: Sales territory}
+      tam_name:        {sql: tam_name,        description: Territory Account Manager}
+      activity_status: {sql: activity_status, description: "Active, Recently quiet, Lapsed, or Never ordered"}
+      last_case_date:  {sql: "CAST(last_case_date AS VARCHAR)", description: Date of the physician's most recent case}
+    measures:
+      physician_count:          {sql: "count(*)", description: Number of physicians}
+      cases_last_90d:           {sql: "sum(cases_last_90d)", description: Cases in the last 90 days}
+      cases_prior_90d:          {sql: "sum(cases_prior_90d)", description: Cases in the 90 days before that}
+      lifetime_cases:           {sql: "sum(lifetime_cases)", description: All cases on record}
+      avg_days_since_last_case: {sql: "round(avg(days_since_last_case), 0)", description: Average days since last case (ordering physicians only)}
+
+  event_followup:
+    description: >
+      One row per physician per event they attended (dinner programs, VIP
+      visits, road shows), comparing their cases in the 90 days before the
+      event with the 90 days after. Use to judge whether a program changed
+      ordering behavior. Followup status: Went quiet = ordered before, none
+      after. Events in the last 90 days have an incomplete after window.
+    time_dimension: event_date
+    sql: |
+      WITH windows AS (
+        SELECT ea.event_id, ea.physician_id,
+               count(c.case_id) FILTER (WHERE c.completed_date >= e.event_date - INTERVAL 90 DAY
+                                          AND c.completed_date <  e.event_date) AS cases_before,
+               count(c.case_id) FILTER (WHERE c.completed_date >  e.event_date
+                                          AND c.completed_date <= e.event_date + INTERVAL 90 DAY
+                                          AND c.completed_date <= {as_of}) AS cases_after
+        FROM event_attendance ea
+        JOIN events e ON e.event_id = ea.event_id
+        LEFT JOIN cases c ON c.ordering_physician_id = ea.physician_id
+        GROUP BY 1, 2
+      )
+      SELECT e.event_name, e.event_type, e.event_date,
+             a.account_name, t.territory_name AS territory, t.tam_name,
+             p.physician_name, p.specialty,
+             w.cases_before, w.cases_after,
+             CASE WHEN w.cases_before > 0 AND w.cases_after = 0 THEN 'Went quiet'
+                  WHEN w.cases_before = 0 AND w.cases_after > 0 THEN 'New orderer'
+                  WHEN w.cases_before = 0 AND w.cases_after = 0 THEN 'No orders'
+                  WHEN w.cases_after > w.cases_before          THEN 'Increased'
+                  WHEN w.cases_after < w.cases_before          THEN 'Decreased'
+                  ELSE 'Steady' END AS followup_status
+      FROM windows w
+      JOIN events e      ON e.event_id = w.event_id
+      JOIN physicians p  ON p.physician_id = w.physician_id
+      JOIN accounts a    ON a.account_id = e.account_id
+      JOIN territories t ON t.territory_id = a.territory_id
+    dimensions:
+      event_name:      {sql: event_name,      description: Event name}
+      event_type:      {sql: event_type,      description: "Dinner program, VIP visit, or CT pathway road show"}
+      event_date:      {sql: "CAST(event_date AS VARCHAR)", description: Event date}
+      account_name:    {sql: account_name,    description: Account that hosted the event}
+      territory:       {sql: territory,       description: Sales territory}
+      tam_name:        {sql: tam_name,        description: Territory Account Manager}
+      physician_name:  {sql: physician_name,  description: Attending physician}
+      specialty:       {sql: specialty,       description: Attending physician specialty}
+      followup_status: {sql: followup_status, description: "Went quiet, Decreased, Steady, Increased, New orderer, or No orders"}
+    measures:
+      attendees:    {sql: "count(*)", description: Number of attendees}
+      went_quiet:   {sql: "sum(CASE WHEN followup_status = 'Went quiet' THEN 1 ELSE 0 END)", description: Attendees who ordered before the event and not after}
+      cases_before: {sql: "sum(cases_before)", description: Attendee cases in the 90 days before the event}
+      cases_after:  {sql: "sum(cases_after)", description: Attendee cases in the 90 days after the event}
+      case_lift:    {sql: "sum(cases_after) - sum(cases_before)", description: Change in attendee cases, after minus before}
+
+  accounts:
+    description: >
+      One row per account with recent volume and estimated utilization.
+      Estimated utilization = cases in the last 90 days divided by the
+      account's self-reported CCTA volume for the same period. The
+      denominator is an estimate, so treat utilization as directional.
+      Data coverage: days when an account's case feed did not arrive are
+      recorded as feed gaps. An account with any gap day in the last 180 days
+      is labeled Data gap, and its change in cases cannot be trusted, because
+      missing days look exactly like a decline. Review decline means complete
+      coverage, at least 60 cases in the earlier 90 days, and a drop of 30% or
+      more. Send Data gap accounts to the data owner and Review decline
+      accounts to the account manager.
+    sql: |
+      WITH vol AS (
+        SELECT account_id,
+               count(*) FILTER (WHERE completed_date > {as_of} - INTERVAL 90 DAY) AS cases_last_90d,
+               count(*) FILTER (WHERE completed_date >  {as_of} - INTERVAL 180 DAY
+                                  AND completed_date <= {as_of} - INTERVAL 90 DAY) AS cases_prior_90d,
+               count(DISTINCT ordering_physician_id) FILTER (WHERE completed_date > {as_of} - INTERVAL 90 DAY) AS active_physicians
+        FROM cases
+        WHERE completed_date <= {as_of}
+        GROUP BY 1
+      ),
+      gaps AS (
+        SELECT account_id, count(*) AS missing_days_180d
+        FROM feed_gaps
+        WHERE gap_date > {as_of} - INTERVAL 180 DAY AND gap_date <= {as_of}
+        GROUP BY 1
+      )
+      SELECT a.account_id, a.account_name, a.account_type,
+             t.territory_name AS territory, t.tam_name,
+             a.activation_date, a.plaque_activation_date,
+             CASE WHEN a.plaque_activation_date IS NOT NULL THEN 'Yes' ELSE 'No' END AS plaque_activated,
+             CASE WHEN a.activation_date > {as_of} - INTERVAL 365 DAY THEN 'Activated in last 12 months'
+                  ELSE 'Activated earlier' END AS activation_cohort,
+             a.est_monthly_ccta * 3 AS est_ccta_90d,
+             coalesce(v.cases_last_90d, 0)    AS cases_last_90d,
+             coalesce(v.cases_prior_90d, 0)   AS cases_prior_90d,
+             coalesce(v.active_physicians, 0) AS active_physicians,
+             coalesce(g.missing_days_180d, 0) AS missing_days_180d,
+             CASE WHEN coalesce(g.missing_days_180d, 0) > 0 THEN 'Data gap' ELSE 'Complete' END AS data_status,
+             CASE WHEN coalesce(g.missing_days_180d, 0) > 0 THEN 'Data gap'
+                  WHEN coalesce(v.cases_prior_90d, 0) >= 60
+                       AND coalesce(v.cases_last_90d, 0) <= 0.70 * v.cases_prior_90d THEN 'Review decline'
+                  ELSE 'No flag' END AS account_signal
+      FROM accounts a
+      JOIN territories t ON t.territory_id = a.territory_id
+      LEFT JOIN vol v    ON v.account_id = a.account_id
+      LEFT JOIN gaps g   ON g.account_id = a.account_id
+    dimensions:
+      account_name:      {sql: account_name,      description: Account name}
+      account_type:      {sql: account_type,      description: "Hospital, Clinic, or Office"}
+      territory:         {sql: territory,         description: Sales territory}
+      tam_name:          {sql: tam_name,          description: Territory Account Manager}
+      plaque_activated:  {sql: plaque_activated,  description: "Whether the account is activated for Plaque, Yes or No"}
+      activation_cohort: {sql: activation_cohort, description: "Activated in last 12 months, or Activated earlier"}
+      activation_date:   {sql: "CAST(activation_date AS VARCHAR)", description: Date the account went live}
+      data_status:       {sql: data_status,       description: "Data gap if any feed day is missing in the last 180 days, otherwise Complete"}
+      account_signal:    {sql: account_signal,    description: "Data gap, Review decline, or No flag. Data gap accounts are never called declines"}
+    measures:
+      account_count:        {sql: "count(*)", description: Number of accounts}
+      cases_last_90d:       {sql: "sum(cases_last_90d)", description: Cases in the last 90 days}
+      cases_prior_90d:      {sql: "sum(cases_prior_90d)", description: Cases in the 90 days before that}
+      case_change_pct:      {sql: "round(100.0 * (sum(cases_last_90d) - sum(cases_prior_90d)) / nullif(sum(cases_prior_90d), 0), 1)", description: Percent change in cases, last 90 days vs prior 90 days}
+      est_utilization:      {sql: "round(sum(cases_last_90d) * 1.0 / nullif(sum(est_ccta_90d), 0), 3)", description: Estimated share of CCTAs sent to Heartflow (0 to 1); directional only}
+      active_physicians:    {sql: "sum(active_physicians)", description: Physicians who ordered in the last 90 days}
+      accounts_with_data_gaps: {sql: "sum(CASE WHEN data_status = 'Data gap' THEN 1 ELSE 0 END)", description: Accounts with at least one missing feed day in the last 180 days}
+      verified_case_change_pct: {sql: "round(100.0 * (sum(CASE WHEN data_status = 'Complete' THEN cases_last_90d END) - sum(CASE WHEN data_status = 'Complete' THEN cases_prior_90d END)) / nullif(sum(CASE WHEN data_status = 'Complete' THEN cases_prior_90d END), 0), 1)", description: Percent change in cases, last 90 days vs prior 90 days, counting only accounts with complete data coverage}
+
+  account_monthly:
+    description: >
+      One row per account per month since it went live, including months
+      with zero cases. Use for ramp curves (cases by months since activation)
+      and monthly utilization trends.
+    time_dimension: month_start
+    sql: |
+      WITH months AS (
+        SELECT CAST(range AS DATE) AS month_start
+        FROM range(DATE '2025-04-01', date_trunc('month', {as_of}) + INTERVAL 1 MONTH, INTERVAL 1 MONTH)
+      ),
+      grid AS (
+        SELECT a.account_id, m.month_start
+        FROM accounts a
+        JOIN months m ON m.month_start >= date_trunc('month', a.activation_date)
+      ),
+      monthly AS (
+        SELECT account_id, date_trunc('month', completed_date) AS month_start,
+               count(*) AS cases,
+               count(*) FILTER (WHERE product = 'Plaque') AS plaque_cases,
+               count(DISTINCT ordering_physician_id) AS ordering_physicians
+        FROM cases
+        WHERE completed_date <= {as_of}
+        GROUP BY 1, 2
+      )
+      SELECT g.account_id, a.account_name, a.account_type,
+             t.territory_name AS territory, t.tam_name,
+             a.activation_date,
+             CASE WHEN a.activation_date > {as_of} - INTERVAL 365 DAY THEN 'Activated in last 12 months'
+                  ELSE 'Activated earlier' END AS activation_cohort,
+             g.month_start,
+             date_diff('month', date_trunc('month', a.activation_date), g.month_start) AS months_since_activation,
+             coalesce(mo.cases, 0) AS cases,
+             coalesce(mo.plaque_cases, 0) AS plaque_cases,
+             coalesce(mo.ordering_physicians, 0) AS ordering_physicians,
+             a.est_monthly_ccta AS est_ccta
+      FROM grid g
+      JOIN accounts a    ON a.account_id = g.account_id
+      JOIN territories t ON t.territory_id = a.territory_id
+      LEFT JOIN monthly mo ON mo.account_id = g.account_id AND mo.month_start = g.month_start
+    dimensions:
+      account_name:            {sql: account_name,      description: Account name}
+      account_type:            {sql: account_type,      description: "Hospital, Clinic, or Office"}
+      territory:               {sql: territory,         description: Sales territory}
+      tam_name:                {sql: tam_name,          description: Territory Account Manager}
+      activation_cohort:       {sql: activation_cohort, description: "Activated in last 12 months, or Activated earlier"}
+      month:                   {sql: "strftime(month_start, '%Y-%m')", description: "Calendar month, YYYY-MM"}
+      months_since_activation: {sql: months_since_activation, description: "Months since the account went live (0 = go-live month)"}
+    measures:
+      case_count:        {sql: "sum(cases)", description: Cases in the period}
+      plaque_cases:      {sql: "sum(plaque_cases)", description: Plaque cases in the period}
+      account_count:     {sql: "count(DISTINCT account_id)", description: Number of accounts}
+      cases_per_account: {sql: "round(sum(cases) * 1.0 / nullif(count(DISTINCT account_id), 0), 1)", description: Average monthly cases per account}
+      est_utilization:   {sql: "round(sum(cases) * 1.0 / nullif(sum(est_ccta), 0), 3)", description: Estimated share of CCTAs sent to Heartflow (0 to 1); directional only}

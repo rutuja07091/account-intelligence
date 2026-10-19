@@ -1,0 +1,15 @@
+{
+  "name": "account-intelligence-cube",
+  "private": true,
+  "description": "Runs the Cube semantic model locally against the demo data",
+  "scripts": {
+    "start": "node index.js",
+    "demo": "node demo_query.js"
+  },
+  "dependencies": {
+    "@cubejs-backend/duckdb-driver": "1.8.8",
+    "@cubejs-backend/server": "1.8.8",
+    "jsonwebtoken": "9.0.3",
+    "dotenv": "16.4.7"
+  }
+}
