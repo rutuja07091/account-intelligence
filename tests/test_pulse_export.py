@@ -36,18 +36,6 @@ def test_pulse_export_has_no_patient_fields(layer, tmp_path):
         assert not any(banned in k.lower() for k in keys), f"Pulse data has a field containing '{banned}'"
 
 
-def test_pulse_payments_link_to_program_attendees(layer, tmp_path):
-    import export_for_pulse
-
-    data = _load(export_for_pulse.main(db_path=layer.db_path, out_path=str(tmp_path / "index.html")))
-    accounts = {a["id"] for a in data["accounts"]}
-    attendees = {(e["account"], a[0], e["name"]) for e in data["events"] for a in e["attendees"]}
-    assert data["payments"], "expected seeded transfers of value"
-    for name, acct, _date, _kind, amount, program in data["payments"]:
-        assert acct in accounts and amount > 0
-        assert (acct, name, program) in attendees
-
-
 def test_pulse_keeps_the_riverbend_story(layer, tmp_path):
     import export_for_pulse
 

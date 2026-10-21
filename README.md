@@ -14,8 +14,8 @@ All data is synthetic. There is no patient data anywhere in the system, by desig
 | Tableau extracts and build guide | `export_for_tableau.py`, `tableau/` | The main live demo: utilization, physicians gone quiet, ramp curves |
 | Cube version of the model | `cube/` | The production-shaped semantic model, run locally and checked against the Python layer |
 | AI assistant | `agent.py`, `app.py` | The closing "where this goes next" demo |
-| Pulse CRM | `export_for_pulse.py`, `pulse/` | The CRM demo: next actions for TAMs, a leadership and compliance dashboard, and live checks against the semantic layer. Live at https://rutuja07091.github.io/account-intelligence/pulse/ |
-| Tests and CI | `tests/`, `.github/workflows/tests.yml` | 19 checks on every pull request |
+| Pulse CRM | `export_for_pulse.py`, `pulse/` | The CRM demo: next actions for TAMs, a leadership dashboard, and live checks against the semantic layer. Live at https://rutuja07091.github.io/account-intelligence/pulse/ |
+| Tests and CI | `tests/`, `.github/workflows/tests.yml` | 18 checks on every pull request |
 
 ## The idea in one paragraph
 
@@ -45,7 +45,7 @@ python -m pip install -r requirements.txt
 python generate_data.py        # builds data/crm_demo.duckdb
 python export_for_tableau.py   # writes tableau/data/*.csv for Tableau Public
 python export_for_pulse.py     # rebuilds pulse/index.html from the same definitions
-python -m pytest -q            # 19 tests should pass
+python -m pytest -q            # 18 tests should pass
 
 export ANTHROPIC_API_KEY="sk-ant-..."   # from console.anthropic.com, a few dollars of credit is plenty
 streamlit run app.py           # opens http://localhost:8501

@@ -363,8 +363,6 @@ const QUIET_MIN = 10;      // cases at risk from quiet physicians before an acco
 const RAMP_UTIL = 0.17;    // under-ramped: activated in the last 12 months, 3+ months live, utilization below this
 const PLAQUE_UTIL = 0.27;  // Plaque opportunity: not activated for Plaque, utilization at or above the median
 
-const PAY = (D.payments || []).map(p => ({ name:p[0], acct:p[1], date:p[2], type:p[3], amount:p[4], event:p[5] }));
-const REVIEW_LIMIT = 2000; // illustrative internal review threshold per physician over 12 months
 const PHYS = D.physicians.map(r => ({ id:r[0], name:r[1], spec:r[2], acct:r[3], last:r[4], l90:r[5], p90:r[6], life:r[7], days:r[8], status:r[9] }));
 const isQuiet = p => p.days !== null && p.days >= QUIET_DAYS && p.life >= QUIET_LIFE;
 const physBy = {};
@@ -460,7 +458,7 @@ const rb = ACCOUNTS.find(a => a.name === 'Riverbend Heart Institute');
 if (rb) addTask(rb, 'Visit the 4 physicians who went quiet after the Plaque dinner program', rb.tam, 0);
 
 // ---------- Access control ----------
-const ROLES = [{ id:'vp', label:'Regional VP (all territories)', terr:null, compliance:true }, ...TERR.map(t => ({ id:t.name, label:`${t.tam}, TAM (${t.name})`, terr:t.name, compliance:false })), { id:'compliance', label:'Compliance analyst (all territories)', terr:null, compliance:true }];
+const ROLES = [{ id:'vp', label:'Regional VP (all territories)', terr:null }, ...TERR.map(t => ({ id:t.name, label:`${t.tam}, TAM (${t.name})`, terr:t.name }))];
 const role = () => ROLES.find(r => r.id === state.role);
 const visible = () => ACCOUNTS.filter(a => !role().terr || a.terr === role().terr);
 function rlsBanner() {
@@ -625,8 +623,8 @@ function renderHub() {
       ${door('crm', ico('<rect x="3" y="4" width="14" height="13" rx="2"/><path d="M3 8h14M7 2v4M13 2v4M7 12h3"/>'), 'CRM workspace', 'For TAMs',
         'Where the work happens: a ranked list of accounts and physicians to see, account records, activity logging, and Tasks written back to Salesforce.', crmPv,
         [[tasks.length, 'open tasks'], [overdue, 'overdue'], [quiet.length, 'physicians to see']], 'Open the CRM')}
-      ${door('dash', ico('<path d="M3 17V9M8 17V4M13 17v-6M18 17H2"/>'), 'Analytics dashboard', 'For regional leaders, finance, and compliance',
-        'How the business is doing: volume, verified change, utilization, Plaque mix, territories, program follow-up, and transfers of value.',
+      ${door('dash', ico('<path d="M3 17V9M8 17V4M13 17v-6M18 17H2"/>'), 'Analytics dashboard', 'For regional leaders and finance',
+        'How the business is doing: volume, verified change, utilization, Plaque mix, territories, and program follow-up.',
         `<span class="pv-cap">Cases per month, ${MONTHS[0]} to ${MONTHS[MONTHS.length - 1]}</span>${areaSpark(T.M, 'var(--s1)')}`,
         [[pct(T.util, 1), 'est. utilization'], [delta(T.verified), 'verified change'], [pct(T.plaqueShare3, 1), 'Plaque share']], 'Open the dashboard')}
       ${door('built', ico('<path d="M7 6l-4 4 4 4M13 6l4 4-4 4M11 4l-2 12"/>'), 'How it’s built', 'For the data team',
@@ -873,44 +871,6 @@ function renderPrograms() {
   main.querySelectorAll('[data-ev]').forEach(rw => rw.addEventListener('click', () => { state.event = +rw.dataset.ev; refreshView(); }));
 }
 
-// ---------- Dashboard: Compliance ----------
-function renderCompliance() {
-  const terr = role().terr, money = n => '$' + fmt(n);
-  const pay = PAY.filter(p => daysBefore(p.date) < 365 && byId[p.acct] && (!terr || byId[p.acct].terr === terr));
-  const byDoc = {};
-  pay.forEach(p => { const k = p.acct + '|' + p.name; (byDoc[k] = byDoc[k] || { name: p.name, acct: p.acct, items: [], total: 0 }); byDoc[k].items.push(p); byDoc[k].total += p.amount; });
-  const docs = Object.values(byDoc).sort((x, y) => y.total - x.total);
-  const total = sum(pay.map(p => p.amount)), review = docs.filter(d => d.total >= REVIEW_LIMIT), near = docs.filter(d => d.total >= REVIEW_LIMIT * .75 && d.total < REVIEW_LIMIT);
-  const cats = {}; pay.forEach(p => { cats[p.type] = cats[p.type] || { amount: 0, n: 0 }; cats[p.type].amount += p.amount; cats[p.type].n++; });
-  const catRows = Object.entries(cats).sort((a, b) => b[1].amount - a[1].amount), cmax = Math.max(1, ...catRows.map(c => c[1].amount));
-  const status = t => t >= REVIEW_LIMIT ? '<span class="pill st-decline">Review required</span>' : t >= REVIEW_LIMIT * .75 ? '<span class="pill st-ramp">Approaching threshold</span>' : '<span class="pill st-ok">Within threshold</span>';
-  const shown = docs.slice(0, 40);
-  main.innerHTML = `
-    ${pageHead('Analytics dashboard', 'Compliance: transfers of value', `Meals, travel, and speaker fees provided to physicians in the 12 months to ${fmtDate(D.meta.as_of)}, recorded per physician to support Open Payments reporting. Available to compliance and regional leadership only.`)}
-    ${rlsBanner()}
-    <section class="kpis">
-      <div class="kpi"><span class="lbl">Transfers of value, 12 months</span><span class="val">${money(total)}</span><span class="delta">${fmt(pay.length)} items recorded</span></div>
-      <div class="kpi"><span class="lbl">Physicians with transfers</span><span class="val">${docs.length}</span><span class="delta">across ${new Set(pay.map(p => p.acct)).size} accounts</span></div>
-      <div class="kpi"><span class="lbl">Speaker fees</span><span class="val">${money(cats['Speaker fee'] ? cats['Speaker fee'].amount : 0)}</span><span class="delta">${cats['Speaker fee'] ? cats['Speaker fee'].n : 0} engagements</span></div>
-      <div class="kpi"><span class="lbl">Review required</span><span class="val ${review.length ? 'down' : ''}">${review.length}</span><span class="delta">${near.length} approaching the ${money(REVIEW_LIMIT)} threshold</span></div>
-    </section>
-    <section class="grid-2">
-      <div class="panel">
-        <div class="panel-head"><div><h2>Transfers by physician</h2><p class="sub">Highest total first${docs.length > shown.length ? `, showing ${shown.length} of ${docs.length}` : ''}. Select a row to open the account.</p></div></div>
-        <div class="tbl-wrap"><table><thead><tr><th>Physician</th><th>Items</th><th class="num">12-month total</th><th>Status</th></tr></thead><tbody>
-        ${shown.map(d => `<tr class="click" data-open="${d.acct}" tabindex="0"><td><div class="who"><span class="avatar">${initials(d.name)}</span><div><div class="acct">${esc(d.name)}</div><div class="meta">${esc(byId[d.acct].name)} · ${esc(byId[d.acct].terr)}</div></div></div></td>
-          <td class="meta" style="white-space:normal;min-width:240px">${d.items.map(p => `${esc(p.type)} ${money(p.amount)} · ${esc(p.event)}`).join('<br>')}</td>
-          <td class="num"><b>${money(d.total)}</b></td><td>${status(d.total)}</td></tr>`).join('') || '<tr><td colspan="4" class="sub">No transfers recorded in this period.</td></tr>'}
-        </tbody></table></div>
-      </div>
-      <div class="panel">
-        <div class="panel-head"><div><h2>By category</h2><p class="sub">12-month total</p></div></div>
-        <div class="hbars">${catRows.map(([k, v]) => `<div class="hbar" style="grid-template-columns:150px minmax(0,1fr) 100px" title="${esc(k)}: ${money(v.amount)}"><span class="hl">${esc(k)}<small>${v.n} items</small></span><span class="htrack"><span style="width:${v.amount / cmax * 100}%"></span></span><span class="hv">${money(v.amount)}</span></div>`).join('')}</div>
-        <div class="check" style="margin-top:16px"><span class="pill st-gap">Note</span><div><b>How this works in production</b><p>Spend is recorded on the Salesforce Event for each program and linked to the physician by NPI, one of the proposed Salesforce changes. The ${money(REVIEW_LIMIT)} review threshold is illustrative and would be set by Compliance.</p></div></div>
-      </div>
-    </section>`;
-}
-
 // ---------- How it's built ----------
 function qualityChecks() {
   const out = [], G = D.governed, T = totals(ACCOUNTS), o = G.overall;
@@ -924,8 +884,6 @@ function qualityChecks() {
   out.push({ state: keys.some(k => banned.test(k)) ? 'fail' : 'pass', title: 'No patient fields reach the CRM', note: 'Pulse receives account and physician aggregates only. The same rule fails the build in test_no_patient_columns_anywhere.' });
   const gaps = ACCOUNTS.filter(a => a.signal === 'Data gap');
   out.push({ state: gaps.length ? 'warn' : 'pass', title: 'Case feed coverage', note: gaps.length ? `${gaps.map(a => `${a.name} (${a.gapDays} days)`).join(', ')} have missing feed days. They are labeled Data gap, routed to the data owner, and left out of the verified change.` : 'Every account’s feed arrived on every day.' });
-  const orphan = PAY.filter(p => !byId[p.acct]).length;
-  out.push({ state: orphan ? 'fail' : 'pass', title: 'Transfers of value link to known accounts', note: orphan ? `${orphan} transfers reference an unknown account.` : `All ${fmt(PAY.length)} transfers link to an account and a program attendee.` });
   const partial = D.events.filter(e => daysBefore(e.date) < 90);
   out.push({ state: partial.length ? 'warn' : 'pass', title: 'Program follow-up windows complete', note: partial.length ? `${partial.length} programs are less than 90 days old, so their after window is still filling. They are marked partial.` : 'All follow-up windows are complete.' });
   return out;
@@ -1045,11 +1003,11 @@ function renderDrawer(keep) {
 
 // ---------- Shell ----------
 const AREAS = [{ id:'hub', label:'Home', hash:'home' }, { id:'crm', label:'CRM', hash:'crm' }, { id:'dash', label:'Dashboard', hash:'dashboard' }, { id:'built', label:'How it’s built', hash:'built' }];
-const SUBTABS = () => ({ hub: [], built: [],
+const SUBTABS = { hub: [], built: [],
   crm: [{ id:'today', label:'Today' }, { id:'accounts', label:'Accounts' }, { id:'activations', label:'Activations' }],
-  dash: [{ id:'overview', label:'Overview' }, { id:'territories', label:'Territories' }, { id:'programs', label:'Programs' }, ...(role().compliance ? [{ id:'compliance', label:'Compliance' }] : [])] });
-const VIEWS = { hub: renderHub, today: renderToday, accounts: renderAccounts, activations: renderActivations, overview: renderOverview, territories: renderTerritories, programs: renderPrograms, compliance: renderCompliance, built: renderBuilt };
-const currentView = () => SUBTABS()[state.area].length ? state.sub[state.area] : state.area;
+  dash: [{ id:'overview', label:'Overview' }, { id:'territories', label:'Territories' }, { id:'programs', label:'Programs' }] };
+const VIEWS = { hub: renderHub, today: renderToday, accounts: renderAccounts, activations: renderActivations, overview: renderOverview, territories: renderTerritories, programs: renderPrograms, built: renderBuilt };
+const currentView = () => SUBTABS[state.area].length ? state.sub[state.area] : state.area;
 const roleSel = document.getElementById('role');
 roleSel.innerHTML = ROLES.map(r => `<option value="${esc(r.id)}">${esc(r.label)}</option>`).join('');
 roleSel.addEventListener('change', e => { state.role = e.target.value; state.event = 0; closeAccount(); render(); });
@@ -1060,8 +1018,7 @@ function goto(area, sub) {
   try { history.replaceState(null, '', '#' + AREAS.find(a => a.id === area).hash); } catch (e) {}
 }
 function render() {
-  const subs = SUBTABS()[state.area];
-  if (subs.length && !subs.some(t => t.id === state.sub[state.area])) state.sub[state.area] = subs[0].id;
+  const subs = SUBTABS[state.area];
   document.getElementById('areas').innerHTML = AREAS.map(a => `<button data-go="${a.id}" ${state.area === a.id ? 'aria-current="page"' : ''}>${a.label}</button>`).join('');
   const tabs = document.getElementById('tabs');
   tabs.hidden = !subs.length;

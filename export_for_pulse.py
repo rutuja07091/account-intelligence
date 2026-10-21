@@ -8,9 +8,8 @@ thing in Pulse as everywhere else. The headline totals are also pulled through
 the semantic layer itself and embedded, so the page can check its own
 arithmetic against the governed numbers.
 
-The only data Pulse adds is demo CRM records: activity (calls, visits, emails)
-standing in for Salesforce Activity, and transfers of value (meals, travel,
-speaker fees) tied to program attendance. Both are synthetic, seeded, and kept
+The only data Pulse adds is demo CRM activity (calls, visits, emails), which
+stands in for Salesforce Activity records. It is synthetic, seeded, and kept
 separate from the warehouse models.
 
 Input:  pulse/template.html
@@ -38,7 +37,7 @@ SEED = 11
 
 # Fill these in once the dashboard and repository are public; the page shows
 # "Link to add" until then.
-LINKS = {"tableau": "", "github": "https://github.com/rutuja07091/account-intelligence"}
+LINKS = {"tableau": "https://public.tableau.com/app/profile/rutuja.hande6400/viz/AccountIntelligence/AccountIntelligence", "github": "https://github.com/rutuja07091/account-intelligence"}
 
 # Real project files shown on the "How it's built" page.
 CODE_FILES = {
@@ -111,28 +110,6 @@ def demo_activity(accounts, physicians, as_of: date) -> dict:
     return out
 
 
-def demo_payments(events: list) -> list:
-    """Seeded transfers of value tied to program attendance, standing in for the
-    spend records that would sit on Salesforce Events. Rows: physician name,
-    account id, date, category, amount in USD, program name."""
-    rng = np.random.default_rng(SEED + 1)
-    rows = []
-    for e in events:
-        for i, (name, _spec, _before, _after, _status) in enumerate(e["attendees"]):
-            row = lambda kind, amount: rows.append([name, e["account"], e["date"], kind, int(amount), e["name"]])
-            if e["type"] == "Dinner program":
-                row("Meal", rng.integers(55, 111))
-                if i == 0:  # attendees are sorted by prior volume; the first is the program speaker
-                    row("Speaker fee", rng.integers(15, 26) * 100)
-            elif e["type"] == "VIP visit":
-                if rng.random() < 0.3:
-                    row("Travel and lodging", rng.integers(350, 901))
-                row("Meal", rng.integers(30, 71))
-            else:
-                row("Food and beverage", rng.integers(18, 41))
-    return rows
-
-
 def build_data(db_path: str = DEFAULT_DB_PATH) -> dict:
     layer = SemanticLayer(db_path=db_path)
     as_of = date.fromisoformat(str(layer.as_of))
@@ -195,7 +172,6 @@ def build_data(db_path: str = DEFAULT_DB_PATH) -> dict:
                           for r in g.sort_values(["cases_before", "physician_name"], ascending=[False, True], kind="stable").itertuples()],
         })
     data["events"].sort(key=lambda e: (e["date"], e["name"]), reverse=True)
-    data["payments"] = demo_payments(data["events"])
     return data
 
 
